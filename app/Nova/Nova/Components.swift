@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import Combine
 
 // MARK: - Theme
 
@@ -58,20 +57,114 @@ struct StarfieldBackground: View {
 
 // MARK: - Controls
 
+// MARK: - Haptics on every press
+
+/// Wraps a button's label so a tick plays the moment a finger goes down. Used by every button style in the app.
+private struct PressHaptic<Content: View>: View {
+    @EnvironmentObject var haptics: HapticsManager
+    let isPressed: Bool
+    @ViewBuilder var content: Content
+    var body: some View {
+        content.onChange(of: isPressed) { _, pressed in if pressed { haptics.play(.select) } }
+    }
+}
+
+extension View {
+    /// Adds the tap vibration to anything tappable that isn't a styled button (Settings rows, links, toggles).
+    func hapticTap() -> some View { modifier(HapticTapModifier()) }
+}
+
+private struct HapticTapModifier: ViewModifier {
+    @EnvironmentObject var haptics: HapticsManager
+    func body(content: Content) -> some View {
+        content.simultaneousGesture(TapGesture().onEnded { haptics.play(.select) })
+    }
+}
+
 /// Large, high-contrast button with a clear label. Fires a haptic tick (the "select" pattern) when pressed.
 struct BigButtonStyle: ButtonStyle {
     var prominent = true
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
+        let shape = RoundedRectangle(cornerRadius: 20, style: .continuous)
+        PressHaptic(isPressed: configuration.isPressed) { configuration.label }
             .font(AppFont.style(.title3, .semibold))
             .multilineTextAlignment(.leading)
             .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
             .padding(.horizontal, 18).padding(.vertical, 10)
             .foregroundStyle(prominent ? Theme.midnight : Theme.text)
-            .background(prominent ? Theme.accent : Theme.panel, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(Theme.border, lineWidth: prominent ? 0 : 1.5))
-            .opacity(configuration.isPressed ? 0.75 : 1)
+            .background {
+                if prominent {
+                    shape.fill(LinearGradient(colors: [Theme.accent, Color(hex: 0x4FC8EA)], startPoint: .top, endPoint: .bottom))
+                } else {
+                    shape.fill(LinearGradient(colors: [Theme.panel, Theme.panel.opacity(0.78)], startPoint: .top, endPoint: .bottom))
+                }
+            }
+            .overlay(shape.stroke(prominent ? Color.white.opacity(0.25) : Theme.border, lineWidth: prominent ? 1 : 1.2))
+            .shadow(color: prominent ? Theme.accent.opacity(0.28) : .clear, radius: 14, y: 4)
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .opacity(configuration.isPressed ? 0.85 : 1)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
             .contentShape(Rectangle())
+    }
+}
+
+/// A tappable card with an icon, a title and one line of explanation (home screen, More screen).
+struct FeatureRow: View {
+    let icon: String
+    let title: String
+    var subtitle: String? = nil
+    var tint: Color = Theme.accent
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.system(size: 22, weight: .medium))
+                .foregroundStyle(tint)
+                .frame(width: 46, height: 46)
+                .background(tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(AppFont.style(.headline, .semibold)).foregroundStyle(Theme.text)
+                if let subtitle {
+                    Text(subtitle).font(AppFont.style(.subheadline)).foregroundStyle(Theme.textSecondary)
+                }
+            }
+            Spacer(minLength: 8)
+            Image(systemName: "chevron.right").font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Theme.textSecondary).accessibilityHidden(true)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
+        .contentShape(Rectangle())
+    }
+}
+
+struct CardButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 20, style: .continuous)
+        PressHaptic(isPressed: configuration.isPressed) { configuration.label }
+            .background(shape.fill(LinearGradient(colors: [Theme.panel, Theme.panel.opacity(0.78)], startPoint: .top, endPoint: .bottom)))
+            .overlay(shape.stroke(Theme.border, lineWidth: 1.2))
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .opacity(configuration.isPressed ? 0.85 : 1)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+    }
+}
+
+// MARK: - Liquid Glass (iOS 26+), with a frosted-material fallback on older iPhones
+
+extension View {
+    /// Apple's Liquid Glass on iOS 26 and later; a blurred, bordered material before that.
+    @ViewBuilder func novaGlass<S: Shape>(in shape: S, interactive: Bool = false) -> some View {
+        #if compiler(>=6.2)
+        if #available(iOS 26.0, *) {
+            self.glassEffect(interactive ? Glass.regular.interactive() : Glass.regular, in: shape)
+        } else {
+            self.background(.ultraThinMaterial, in: shape).overlay(shape.stroke(Theme.border, lineWidth: 1))
+        }
+        #else
+        self.background(.ultraThinMaterial, in: shape).overlay(shape.stroke(Theme.border, lineWidth: 1))
+        #endif
     }
 }
 
@@ -123,14 +216,17 @@ struct Panel<Content: View>: View {
         content
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.panel, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(Theme.border, lineWidth: 1))
+            .background(LinearGradient(colors: [Theme.panel, Theme.panel.opacity(0.8)], startPoint: .top, endPoint: .bottom),
+                        in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).stroke(Theme.border, lineWidth: 1))
     }
 }
 
 /// Screen scaffold: starfield, scrolling content, readable width, starlight tint.
+/// `showsTitle: false` hides the navigation bar (the home screen draws its own logo header instead).
 struct Screen<Content: View>: View {
     let title: String
+    var showsTitle = true
     @ViewBuilder var content: Content
     var body: some View {
         ZStack {
@@ -143,7 +239,8 @@ struct Screen<Content: View>: View {
             }
         }
         .navigationTitle(title)
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(showsTitle ? .large : .inline)
+        .toolbar(showsTitle ? .automatic : .hidden, for: .navigationBar)
         .font(AppFont.style(.body))
         .foregroundStyle(Theme.text)
         .tint(Theme.accent)
