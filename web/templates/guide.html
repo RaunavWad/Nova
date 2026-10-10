@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% set page='guide' %}
+{% block title %}How to listen — NOVA{% endblock %}
+{% block content %}
+<section class="content-section guide-page">
+ <p class="eyebrow">YOUR GUIDE TO NOVA</p>
+ <h1 class="page-title">A sky you can <em>hear</em></h1>
+ <p class="page-lead">NOVA is designed to work with sound, a keyboard, a screen reader or a mouse</p>
+ <div class="info-grid guide-steps">
+   <article><span class="info-num">01</span><h3>Explore the sky</h3><p>Choose your observing location and leave the date on Live or set another date to visit a different sky</p></article>
+   <article><span class="info-num">02</span><h3>Find a star or planet</h3><p>Use the searchable star list or explore the map with arrow keys and Enter</p></article>
+   <article><span class="info-num">03</span><h3>Listen and ask</h3><p>Turn on audio to hear descriptions or open Ask NOVA to ask an astronomy question aloud</p></article>
+ </div>
+ <section class="guide-info"><p class="eyebrow">KEYBOARD ACCESS</p><h2>Designed for more than sight</h2><div class="keyboard-grid">
+   <div><strong>Tab</strong><span>Move between the controls and the map</span></div>
+   <div><strong>Arrow keys</strong><span>Move between stars or planets when the map is focused</span></div>
+   <div><strong>Enter</strong><span>Hear more about the currently selected object</span></div>
+   <div><strong>Search</strong><span>Look up a star or planet by name instead of using the map</span></div>
+ </div></section>
+ <section class="guide-info"><p class="eyebrow">WHAT LIVE MEANS</p><h2>A calculated view of the sky</h2><p>NOVA uses catalog positions and astronomy calculations to show where stars and planets should be for your location and time  Live mode refreshes every 30 seconds while the Explore page is open</p><p>Constellation outlines are patterns of connections between stars  Their shape moves across your sky because their stars are recalculated, not because the connections themselves change</p></section>
+ <div class="guide-buttons"><a class="primary-btn" href="{{ url_for('explore') }}">Explore the sky ↗</a><a class="secondary-btn" href="{{ url_for('ask_nova') }}">Ask NOVA ↗</a></div>
+</section>
+{% endblock %}

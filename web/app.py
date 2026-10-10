@@ -10,12 +10,25 @@ import os
 
 load_dotenv()
 app = Flask(__name__)
-
 from voice_mode import voice_routes
 app.register_blueprint(voice_routes)
+
 @app.route('/')
 def home():
     return render_template('index.html')
+
+
+@app.route('/explore')
+def explore():
+    return render_template('explore.html')
+
+@app.route('/ask')
+def ask_nova():
+    return render_template('ask.html')
+
+@app.route('/guide')
+def guide():
+    return render_template('guide.html')
 
 
 @app.get('/api/sky')

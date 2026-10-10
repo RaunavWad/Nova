@@ -14,7 +14,7 @@ folder.mkdir(exist_ok=True)
 load = Loader(str(folder))
 
 hyg_url = 'https://raw.githubusercontent.com/astronexus/HYG-Database/main/hyg/CURRENT/hygdata_v41.csv'
-lines_url = 'https://raw.githubusercontent.com/Stellarium/stellarium/2b10b1a3bb534eb4e7586751054bf67b36c22e53/skycultures/modern_st/index.json'
+lines_url = 'https://raw.githubusercontent.com/Stellarium/stellarium-skycultures/master/western/index.json'
 
 planets = {
     'Mercury':'mercury', 'Venus':'venus', 'Mars':'mars',
@@ -46,8 +46,10 @@ def setup():
     needed = set()
     for c in const:
         short = c['id'].split()[-1]
-        for chain in c['lines']:
-            for x,y in zip(chain,chain[1:]):
+        for chain in c.get('lines',[]):
+            # some Stellarium chains begin with 'thin' or 'bold'
+            hips = [int(n) for n in chain if isinstance(n,int) or (isinstance(n,str) and n.isdigit())]
+            for x,y in zip(hips, hips[1:]):
                 needed.add(x); needed.add(y)
                 lines.append([f'hip-{x}',f'hip-{y}',short])
 
@@ -156,6 +158,8 @@ def get_sky(lat, lon, when):
     sun_alt = here.observe(eph['sun']).apparent().altaz()[0].degrees
     return {
         'objects':answer, 'lines':lines,
+        'constellations':[{'id':s,'name':dict(load_constellation_names()).get(s,s)} for s in sorted({e[2] for e in lines})],
+        'updated_at':when.isoformat(),
         'daylight':bool(sun_alt > -0.833),
         'above':sum(s['alt']>0 for s in answer),
         'count':len(answer)

@@ -12,7 +12,8 @@ const cities = {
 };
 
 let coords = cities.robbinsville;
-let everything = [], lines = [];
+let everything = [], lines = [], constellationNames = {};
+let focusedCon = null, showConLines = true, showConNames = true;
 let chosen = null, mode = 'sky', audio = false, live = true;
 let storyCache = {}, storyTimer, requestNum = 0;
 let mapSpots = [];
@@ -42,7 +43,7 @@ async function loadSky() {
   let t = new Date(el('skyDate').value);
   if(isNaN(t)) { el('skyStatus').textContent='Choose a valid date';return }
 
-  el('skyStatus').textContent='Loading the sky';
+  if(!everything.length) el('skyStatus').textContent='Loading the sky';
 
   let p = new URLSearchParams({lat:coords[0],lon:coords[1],at:t.toISOString()});
   let num = ++requestNum;
@@ -55,16 +56,20 @@ async function loadSky() {
 
     everything = data.objects;
     lines = data.lines;
+    constellationNames = Object.fromEntries((data.constellations || []).map(c=>[c.id,c.name]));
     el('skyCount').textContent = `${data.above} catalog objects above the horizon`;
-    el('skyStatus').textContent = data.daylight
+    let skyMessage = data.daylight
       ? 'Daylight right now  The map still shows where objects are'
       : 'Night sky positions are ready';
+    if(el('skyStatus').textContent!==skyMessage && !el('skyStatus').textContent.startsWith('Selected ')) el('skyStatus').textContent=skyMessage;
 
     if(!chosen || !everything.some(x=>x.id===chosen)) {
       chosen = visible()[0]?.id || everything[0]?.id;
     }
 
-    showList(); info(); drawMap();
+    showList(); info(); updateConstellations(); drawMap();
+    el('skyUpdated').textContent = 'Calculated at '+new Date().toLocaleTimeString();
+    el('skyTimeMode').textContent = live ? 'Live sky updates every 30 seconds' : 'Viewing a selected date and time';
   } catch(e) {
     console.log(e);
     el('skyStatus').textContent = e.message + '  Check your Flask terminal';
@@ -74,7 +79,8 @@ async function loadSky() {
 function visible() {
   let q = el('starSearch').value.toLowerCase().trim();
   let found = everything.filter(o => (mode==='all' || o.alt>0)
-    && (o.name.toLowerCase().includes(q) || o.constellation.toLowerCase().includes(q)));
+    && (o.name.toLowerCase().includes(q) || o.constellation.toLowerCase().includes(q))
+    && (!focusedCon || (o.type==='star' && o.constellation===constellationNames[focusedCon])));
 
   // bright objects first, planets up front
   found.sort((a,b)=>(a.type==='planet'?-3:a.mag)-(b.type==='planet'?-3:b.mag));
@@ -83,7 +89,9 @@ function visible() {
 
 function showList() {
   let results = visible();
-  let box = el('starList'); box.innerHTML='';
+  let box = el('starList');
+  let hadFocus=box.contains(document.activeElement) ? document.activeElement?.dataset?.id : null;
+  box.innerHTML='';
 
   // don't make a screen reader tab through thousands of buttons
   results.slice(0,100).forEach(o=>{
@@ -109,6 +117,7 @@ function showList() {
   });
 
   el('collectionLabel').textContent = `Showing ${Math.min(100,results.length)} of ${results.length} objects`;
+  if(hadFocus) [...box.querySelectorAll('button')].find(b=>b.dataset.id===hadFocus)?.focus();
 }
 
 function summary(o) {
@@ -128,6 +137,8 @@ function info() {
   el('starFacts').textContent = storyCache[chosen] || summary(o);
   el('starDirection').textContent = o ?
     (o.alt>0 ? `${compass(o.az)}  ·  ${Math.round(o.alt)} degrees above the horizon` : 'Below the horizon') : '';
+  let askLink=el('askAboutStar');
+  if(o && askLink)askLink.href='/ask?about='+encodeURIComponent(o.name);
   el('starList').querySelectorAll('button').forEach(b=>{
     b.setAttribute('aria-pressed',String(b.dataset.id===chosen));
   });
@@ -230,6 +241,50 @@ function spot(o) {
           y:canvas.height/2-Math.cos(angle)*r};
 }
 
+// a line pattern is fixed but its STARS move with location and time
+// pull the positions from /api/sky again every 30 seconds
+function liveGroups() {
+  let byId = new Map(everything.map(o=>[o.id,o]));
+  let groups = new Map();
+  for(let edge of lines) {
+    let a=byId.get(edge[0]),b=byId.get(edge[1]),code=edge[2];
+    if(!a || !b || (a.alt<=0 && b.alt<=0))continue;
+    if(!groups.has(code))groups.set(code,{id:code,name:constellationNames[code]||code,edges:0,stars:new Set()});
+    let group=groups.get(code);
+    group.edges++;
+    if(a.alt>0)group.stars.add(a.id);
+    if(b.alt>0)group.stars.add(b.id);
+  }
+  return [...groups.values()].sort((a,b)=>b.edges-a.edges || a.name.localeCompare(b.name));
+}
+
+function updateConstellations() {
+  let groups=liveGroups();
+  let box=el('constellationList');
+  let focus=document.activeElement?.dataset?.constellation;
+  box.innerHTML='';
+  el('constellationCount').textContent=`${groups.length} patterns have stars above the horizon`;
+  for(let group of groups) {
+    let b=document.createElement('button');
+    b.type='button';
+    b.className='constellation-option';
+    b.dataset.constellation=group.id;
+    b.setAttribute('aria-pressed',String(focusedCon===group.id));
+    b.textContent=group.name+'  ·  '+group.stars.size+' stars';
+    b.addEventListener('click',()=>{
+      focusedCon=focusedCon===group.id ? null : group.id;
+      el('clearCon').hidden=!focusedCon;
+      updateConstellations();showList();drawMap();
+    });
+    box.appendChild(b);
+  }
+  if(focusedCon && !groups.some(g=>g.id===focusedCon)) {
+    focusedCon=null;
+    el('clearCon').hidden=true;
+  }
+  if(focus) box.querySelector(`[data-constellation="${focus}"]`)?.focus();
+}
+
 function drawMap() {
   let w=canvas.width,h=canvas.height,cx=w/2,cy=h/2,R=188;
   ctx.fillStyle='#0B1423';ctx.fillRect(0,0,w,h);
@@ -240,83 +295,89 @@ function drawMap() {
   ctx.beginPath();ctx.moveTo(cx-R,cy);ctx.lineTo(cx+R,cy);
   ctx.moveTo(cx,cy-R);ctx.lineTo(cx,cy+R);ctx.stroke();
 
+  let allById=new Map(everything.map(o=>[o.id,o]));
   let pos=new Map();
   mapSpots=[];
-  everything.forEach(o=>{
-    if(o.alt<=0)return;
+  for(let o of everything) {
+    if(o.alt<=0)continue;
     let p=spot(o);pos.set(o.id,p);
     mapSpots.push({...p,id:o.id});
-  });
+  }
 
-  // the constellation lines stay in the background
-  ctx.strokeStyle='#B7A4FF';ctx.globalAlpha=.35;
-  lines.forEach(edge=>{
-    let a=pos.get(edge[0]),b=pos.get(edge[1]);
-    if(!a||!b)return;
-    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
-  });
-  ctx.globalAlpha=1;
-
-  // first draw every other star so the chosen one is on top
-  everything.forEach(o=>{
-    let p=pos.get(o.id);if(!p||o.id===chosen)return;
-    let isPlanet=o.type==='planet';
-    ctx.globalAlpha=.8;
-    ctx.fillStyle=isPlanet?'#B7A4FF':'#68E1FF';
-    ctx.beginPath();
-    ctx.arc(p.x,p.y,isPlanet?5:Math.max(1.1,3.8-(o.mag||0)*.4),0,Math.PI*2);
-    ctx.fill();
-
-    if(isPlanet || (o.mag!==null && o.mag<.6)) {
-      ctx.font='12px "Instrument Sans",sans-serif';
-      ctx.fillStyle='#F4F7FF';ctx.textAlign='center';
-      ctx.fillText(o.name,p.x,p.y-13);
+  // crop constellation segments right at the horizon
+  // even if only one endpoint is up, the visible part is still drawn
+  if(showConLines) {
+    ctx.save();
+    ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.clip();
+    for(let edge of lines) {
+      let a=allById.get(edge[0]),b=allById.get(edge[1]);
+      if(!a||!b||(a.alt<=0&&b.alt<=0))continue;
+      if(focusedCon && edge[2]!==focusedCon)continue;
+      let p1=spot(a),p2=spot(b);
+      ctx.strokeStyle=focusedCon?'#68E1FF':'#B7A4FF';
+      ctx.globalAlpha=focusedCon?.95:.46;
+      ctx.lineWidth=focusedCon?2.6:1.15;
+      ctx.beginPath();ctx.moveTo(p1.x,p1.y);ctx.lineTo(p2.x,p2.y);ctx.stroke();
     }
-  });
+    ctx.restore();
+  }
+
+  // star / planet dots
+  for(let o of everything) {
+    let p=pos.get(o.id);
+    if(!p||o.id===chosen)continue;
+    ctx.globalAlpha=(focusedCon && o.type==='star' && o.constellation!==constellationNames[focusedCon])?.26:.88;
+    ctx.fillStyle=o.type==='planet'?'#B7A4FF':'#68E1FF';
+    ctx.beginPath();ctx.arc(p.x,p.y,o.type==='planet'?5:Math.max(1.1,3.8-(o.mag||0)*.4),0,Math.PI*2);ctx.fill();
+    if(o.type==='planet'||(o.mag!==null&&o.mag<.4)) {
+      ctx.font='12px "Instrument Sans",sans-serif';
+      ctx.fillStyle='#F4F7FF';ctx.textAlign='center';ctx.fillText(o.name,p.x,p.y-13);
+    }
+  }
   ctx.globalAlpha=1;
 
-  // compass
-  ctx.font='14px "Instrument Sans",sans-serif';
-  ctx.textAlign='center';ctx.fillStyle='#A8B6CA';
+  // show a few names, not 88 labels on top of each other
+  if(showConNames) {
+    let visibleNames=liveGroups().filter(g=>!focusedCon || g.id===focusedCon);
+    for(let group of visibleNames.slice(0,focusedCon?1:9)) {
+      let pts=[...group.stars].map(id=>pos.get(id)).filter(Boolean);
+      if(!pts.length)continue;
+      let x=pts.reduce((n,p)=>n+p.x,0)/pts.length;
+      let y=pts.reduce((n,p)=>n+p.y,0)/pts.length;
+      ctx.font='12px "Instrument Sans",sans-serif';ctx.textAlign='center';
+      ctx.fillStyle=focusedCon?'#68E1FF':'#B7A4FF';
+      ctx.fillText(group.name,x,Math.max(24,y-14));
+    }
+  }
+
+  ctx.font='14px "Instrument Sans",sans-serif';ctx.textAlign='center';ctx.fillStyle='#A8B6CA';
   ctx.fillText('N',cx,cy-R-12);ctx.fillText('S',cx,cy+R+21);
   ctx.fillText('E',cx+R+18,cy+4);ctx.fillText('W',cx-R-18,cy+4);
 
-  // big bright highlight for the selected star or planet
+  // selected star is huge so you can actually see it
   let picked=everything.find(o=>o.id===chosen);
   let p=pos.get(chosen);
-  if(picked && p) {
+  if(picked&&p) {
     ctx.save();
-
-    // soft cyan glow behind it
     ctx.beginPath();ctx.arc(p.x,p.y,18,0,Math.PI*2);
-    ctx.fillStyle='rgba(104,225,255,.16)';
-    ctx.shadowColor='#68E1FF';ctx.shadowBlur=24;
-    ctx.fill();
+    ctx.fillStyle='rgba(104,225,255,.16)';ctx.shadowColor='#68E1FF';ctx.shadowBlur=24;ctx.fill();
     ctx.shadowBlur=0;
-
-    // two clear rings + bigger center dot
     ctx.beginPath();ctx.arc(p.x,p.y,21,0,Math.PI*2);
     ctx.strokeStyle='#B7A4FF';ctx.lineWidth=3;ctx.stroke();
     ctx.beginPath();ctx.arc(p.x,p.y,13,0,Math.PI*2);
     ctx.strokeStyle='#F4F7FF';ctx.lineWidth=2;ctx.stroke();
     ctx.beginPath();ctx.arc(p.x,p.y,6.5,0,Math.PI*2);
     ctx.fillStyle=picked.type==='planet'?'#B7A4FF':'#68E1FF';ctx.fill();
-
-    // label with a dark background so other stars can't cover it
     ctx.font='600 15px "Instrument Sans",sans-serif';
     let name=picked.name;
     let boxW=ctx.measureText(name).width+26,boxH=32;
     let x=Math.max(8,Math.min(w-boxW-8,p.x-boxW/2));
     let y=p.y-61;
     if(y<8)y=p.y+29;
-
     ctx.fillStyle='#131D30';ctx.fillRect(x,y,boxW,boxH);
-    ctx.strokeStyle='#68E1FF';ctx.lineWidth=2;
-    ctx.strokeRect(x,y,boxW,boxH);
-    ctx.fillStyle='#F4F7FF';ctx.textAlign='center';
-    ctx.textBaseline='middle';
+    ctx.strokeStyle='#68E1FF';ctx.lineWidth=2;ctx.strokeRect(x,y,boxW,boxH);
+    ctx.fillStyle='#F4F7FF';ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText(name,x+boxW/2,y+boxH/2);
-
     ctx.restore();
   }
 }
@@ -421,11 +482,11 @@ el('locateBtn').addEventListener('click',()=>{
   },()=>el('skyStatus').textContent='Could not get location');
 });
 
-el('mapToggle').addEventListener('click',()=>{
-  let area=el('mapArea');area.hidden=!area.hidden;
-  el('mapToggle').setAttribute('aria-expanded',String(!area.hidden));
-  el('mapToggle').textContent=area.hidden?'Show visual star map':'Hide visual star map';
-  if(!area.hidden) drawMap();
+// map is now visible all the time on Explore
+el('showLines').addEventListener('change',e=>{showConLines=e.target.checked;drawMap()});
+el('showLabels').addEventListener('change',e=>{showConNames=e.target.checked;drawMap()});
+el('clearCon').addEventListener('click',()=>{
+  focusedCon=null;el('clearCon').hidden=true;updateConstellations();showList();drawMap();
 });
 
 // old tour cards still work, but now using real catalog star names
@@ -459,4 +520,5 @@ fetch('/api/services').then(r=>r.json()).then(d=>{
 }).catch(()=>console.log('Could not check service setup'));
 
 dateNow();loadSky();
-setInterval(()=>{if(live)loadSky()},60000);
+setInterval(()=>{if(live && !document.hidden)loadSky()},30000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&live)loadSky()});

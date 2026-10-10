@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#080E1B">
+<title>{% block title %}NOVA — Explore beyond sight{% endblock %}</title>
+<link rel="icon" type="image/png" href="{{ url_for('static',filename='images/NOVA Logo No BG.png') }}">
+<link rel="stylesheet" href="{{ url_for('static',filename='style.css') }}">
+{% block head %}{% endblock %}
+</head>
+<body>
+<a href="#main" class="skip">Skip to content</a>
+<header class="navbar">
+  <a href="{{ url_for('home') }}" class="logo" aria-label="NOVA home">
+    <img src="{{ url_for('static',filename='images/NOVA Logo No BG.png') }}" alt="NOVA">
+  </a>
+  <nav class="site-nav" aria-label="Main navigation">
+    <a href="{{ url_for('home') }}" {% if page=='home' %}aria-current="page"{% endif %}>Home</a>
+    <a href="{{ url_for('explore') }}" {% if page=='explore' %}aria-current="page"{% endif %}>Explore sky</a>
+    <a href="{{ url_for('ask_nova') }}" {% if page=='ask' %}aria-current="page"{% endif %}>Ask NOVA</a>
+    <a href="{{ url_for('guide') }}" {% if page=='guide' %}aria-current="page"{% endif %}>How to listen</a>
+  </nav>
+  {% if page=='explore' %}
+  <button id="audioToggle" class="audio-btn" type="button" aria-pressed="false" aria-label="Enable audio" title="Enable audio"
+    data-on-src="{{ url_for('static',filename='images/audio.png') }}"
+    data-off-src="{{ url_for('static',filename='images/audio off.png') }}">
+    <img id="audioIcon" src="{{ url_for('static',filename='images/audio off.png') }}" alt="" aria-hidden="true">
+    <span id="audioLabel">Enable audio</span>
+  </button>
+  {% else %}
+  <a class="nav-cta" href="{{ url_for('explore') }}">Explore sky ↗</a>
+  {% endif %}
+</header>
+<main id="main">{% block content %}{% endblock %}</main>
+<footer>
+  <a class="logo" href="{{ url_for('home') }}" aria-label="NOVA home">
+    <img src="{{ url_for('static',filename='images/NOVA Logo No BG.png') }}" alt="NOVA">
+  </a>
+  <p>The universe is for everyone</p>
+  <nav class="footer-nav" aria-label="Footer navigation">
+    <a href="{{ url_for('explore') }}">Sky</a>
+    <a href="{{ url_for('ask_nova') }}">Ask NOVA</a>
+    <a href="{{ url_for('home') }}#about">Our mission</a>
+  </nav>
+</footer>
+{% block scripts %}{% endblock %}
+</body>
+</html>

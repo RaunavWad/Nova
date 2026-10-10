@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% set page='explore' %}
+{% block title %}Explore the live sky — NOVA{% endblock %}
+{% block content %}
+<section class="sky-section sky-page" id="explore">
+ <div class="section-heading">
+   <div><p class="eyebrow">YOUR WINDOW TO THE UNIVERSE</p><h1 class="page-title">Explore the live sky</h1><p class="page-lead">Stars, planets and constellations positioned for your location and time</p></div>
+   <div class="tabs" role="group" aria-label="Object filters">
+     <button id="yourSkyBtn" type="button" aria-pressed="true">Your sky</button>
+     <button id="allStarsBtn" type="button" aria-pressed="false">All stars</button>
+   </div>
+ </div>
+ <div class="sky-settings">
+   <div class="setting"><label for="place">OBSERVING FROM</label><select id="place"><option value="robbinsville">Robbinsville, NJ</option><option value="princeton">Princeton, NJ</option><option value="nyc">New York, NY</option></select><button id="locateBtn" class="small-link" type="button">Use my location</button></div>
+   <div class="setting"><label for="skyDate">DATE &amp; TIME</label><div class="date-control"><input type="datetime-local" id="skyDate"><button type="button" id="nowBtn">Now / Live</button></div><p id="skyTimeMode">Live sky updates every 30 seconds</p></div>
+   <div class="setting"><p class="setting-label">SKY STATUS</p><h3 id="skyCount">Loading sky</h3><p id="skyStatus" role="status" aria-live="polite">Preparing your stars and planets</p><p id="skyUpdated">Waiting for first update</p></div>
+ </div>
+
+ <div class="explorer">
+   <div class="explorer-heading">
+     <div><p class="eyebrow">LIVE STAR MAP</p><h2>Tonight's constellations</h2></div>
+     <div class="map-switches">
+       <label class="switch-line"><input id="showLines" type="checkbox" checked> Constellation lines</label>
+       <label class="switch-line"><input id="showLabels" type="checkbox" checked> Constellation names</label>
+     </div>
+   </div>
+   <p class="help-text">Positions are calculated from star and planet data, not a live camera — cloud cover and light pollution are not included</p>
+   <div class="sky-map-layout">
+     <div class="map-column">
+       <div class="canvas-wrap"><canvas id="skyCanvas" width="820" height="440" tabindex="0" role="group" aria-label="Interactive sky map, use arrow keys to select stars and planets and press Enter to hear about one">Sky map unavailable, use the star list below</canvas></div>
+       <p class="map-help">North at the top · East to the right · Horizon is the outer circle</p>
+     </div>
+     <aside class="constellation-panel" aria-labelledby="visibleConTitle">
+       <p class="eyebrow">LIVE CONSTELLATIONS</p>
+       <h3 id="visibleConTitle">Above your horizon</h3>
+       <p id="constellationCount" class="muted">Loading visible constellations</p>
+       <div id="constellationList" class="constellation-list" role="group" aria-label="Visible constellations"></div>
+       <button type="button" id="clearCon" class="secondary-btn mini-btn" hidden>Show all constellations</button>
+     </aside>
+   </div>
+
+   <div class="explorer-heading object-heading">
+     <div><p class="eyebrow">DISCOVER OBJECTS</p><h2>Find your next discovery</h2></div>
+     <input type="search" id="starSearch" placeholder="Search stars and planets" aria-label="Search stars and planets">
+   </div>
+   <p class="help-text">Use Tab for star buttons, arrow keys to move between them and Enter to select</p>
+   <p id="collectionLabel" class="help-text" aria-live="polite">Loading star collection</p>
+   <div id="starList" class="star-list" role="group" aria-label="Stars and planets to explore"></div>
+
+   <div class="selected-star">
+     <div><p class="eyebrow">CURRENTLY EXPLORING</p><h3 id="starName">Choose a star</h3><p id="starMeta"></p><p id="starFacts"></p><p id="starDirection"></p></div>
+     <div class="star-actions"><button id="playBtn" class="primary-btn" type="button">Hear description</button><button id="stopBtn" class="secondary-btn" type="button">Stop audio</button><a id="askAboutStar" class="secondary-btn" href="{{ url_for('ask_nova') }}">Ask NOVA about this ↗</a></div>
+   </div>
+ </div>
+</section>
+
+<section class="content-section" id="tours">
+ <p class="eyebrow">GUIDED TOURS</p><h2>Follow the constellations</h2>
+ <p class="section-intro">These tours use real star positions for the date and location you've selected above</p>
+ <div class="tour-grid">
+   <article class="tour-card"><span class="tour-symbol" aria-hidden="true">✧</span><p class="eyebrow">CONSTELLATION 01</p><h3>Orion</h3><p>Follow Orion the Hunter through his brightest stars</p><button type="button" data-tour="orion" class="secondary-btn">Start tour ↗</button></article>
+   <article class="tour-card"><span class="tour-symbol" aria-hidden="true">✦</span><p class="eyebrow">CONSTELLATION 02</p><h3>Lyra</h3><p>Discover Vega and the stars of the celestial lyre</p><button type="button" data-tour="lyra" class="secondary-btn">Start tour ↗</button></article>
+   <article class="tour-card"><span class="tour-symbol" aria-hidden="true">✳</span><p class="eyebrow">CONSTELLATION 03</p><h3>Ursa Major</h3><p>Trace the Big Dipper through the Great Bear</p><button type="button" data-tour="ursa" class="secondary-btn">Start tour ↗</button></article>
+ </div>
+ <div id="tourPlayer" class="tour-player" hidden><p id="tourProgress" class="eyebrow">GUIDED TOUR</p><h3 id="tourStar">Your tour</h3><p id="tourText" aria-live="polite"></p><div class="tour-controls"><button id="prevTour" class="secondary-btn" type="button">Previous</button><button id="repeatTour" class="secondary-btn" type="button">Hear again</button><button id="nextTour" class="primary-btn" type="button">Next star →</button><button id="endTour" class="secondary-btn" type="button">End tour</button></div></div>
+</section>
+<section class="content-section guide-banner"><p class="eyebrow">NEW TO NOVA</p><h2>Listening is another way to explore</h2><p>Learn the keyboard shortcuts and audio features before you begin</p><a class="primary-btn" href="{{ url_for('guide') }}">How to listen ↗</a></section>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static',filename='main.js') }}"></script>{% endblock %}

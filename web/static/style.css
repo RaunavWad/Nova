@@ -1083,279 +1083,125 @@ footer .logo img { height:39px }
   flex-shrink:0;
 }
 
+/* new pages, same old colors */
+.navbar {gap:18px}
+.navbar .site-nav {display:flex;gap:26px;align-items:center}
+.site-nav a[aria-current="page"] {color:var(--cyan);font-weight:700}
+.nav-cta {color:var(--bg);background:var(--cyan);border-radius:9px;padding:12px 18px;text-decoration:none;font-size:14px;font-weight:600;white-space:nowrap}
+.nav-cta:hover {background:#9AECFF}
+.page-title {font-family:'Instrument Serif',serif;font-size:clamp(58px,6.3vw,100px);font-weight:400;line-height:1.04;letter-spacing:-1.5px;margin:8px 0 16px}
+.page-title em {font-style:normal;color:var(--cyan)}
+.page-lead {color:var(--gray);font-size:17px;max-width:750px;line-height:1.7}
+.footer-nav {display:flex;gap:20px;flex-wrap:wrap}
+.footer-nav a {font-size:13px;text-decoration:none;color:var(--gray)}
+.footer-nav a:hover {color:var(--cyan)}
 
-/* about us picture */
-
-.about {
-  display:grid;
-  grid-template-columns:1.3fr 1fr;
-  gap:65px;
-  align-items:center;
-}
-
-.about-photo img {
-  width:100%;
-  height:auto;
-  aspect-ratio:4/3;
-  object-fit:cover;
-  border-radius:12px;
-  display:block;
-}
-
-@media(max-width:800px) {
-  .about {
-    grid-template-columns:1fr;
-    gap:30px;
-  }
-
-  .about-photo img {
-    max-width:550px;
-  }
-}
-
-
-
-
-/* main app section */
-
+/* the iphone app is actually the big feature */
 .app-promo {
-  margin:30px 4% 80px;
-  padding:85px 6%;
-  min-height:650px;
-  background:#10192B;
-  border:1px solid var(--border);
-  border-radius:18px;
-
-  display:grid;
-  grid-template-columns:1.15fr 1fr;
-  align-items:center;
-  gap:60px;
-  overflow:hidden;
-  position:relative;
+  margin:20px 4% 75px;padding:75px 6%;min-height:600px;
+  background:#10192B;border:1px solid var(--border);border-radius:18px;
+  display:grid;grid-template-columns:1.12fr 1fr;align-items:center;gap:55px;overflow:hidden;position:relative;
 }
+.app-promo h2 {font-family:'Instrument Serif',serif;font-size:clamp(66px,6.2vw,105px);font-weight:400;letter-spacing:-1px;line-height:1;margin:16px 0 30px}
+.app-promo h2 em {font-style:normal;color:var(--cyan)}
+.app-intro {font-size:21px;max-width:485px;line-height:1.5;margin:0 0 15px}
+.app-desc {color:var(--gray);font-size:16px;line-height:1.8;max-width:530px}
+.app-highlights {display:flex;gap:10px;flex-wrap:wrap;margin:25px 0 33px}
+.app-highlights span {font-size:13px;color:var(--gray);padding:9px 12px;border:1px solid var(--border);border-radius:7px}
+.app-download p {font-size:12px;letter-spacing:2px;color:var(--cyan);font-weight:600;margin:0 0 15px}
+.store-badge {width:175px;max-width:100%;height:auto;display:block}
+.coming-soon {font-size:13px;color:var(--gray);display:block;margin-top:11px}
+.app-promo-right {min-height:475px;display:flex;align-items:center;justify-content:center;position:relative}
+.app-orbit {position:absolute;border:1px solid #30425C;border-radius:50%;pointer-events:none}
+.orbit-one {width:520px;height:520px}.orbit-two {width:390px;height:390px;border-color:#426A91}
+.app-preview {position:relative;z-index:1;width:310px;min-height:410px;padding:45px 25px 25px;border:1px solid #426A91;border-radius:30px;background:#080E1B;display:flex;flex-direction:column;align-items:center;text-align:center;box-shadow:0 20px 80px rgba(0,0,0,.3)}
+.app-icon {width:175px;height:175px;border-radius:38px;object-fit:cover;margin-bottom:22px}
+.app-preview h3 {font-family:'Instrument Serif',serif;font-size:48px;font-weight:400;margin:0}
+.app-preview>p {margin:0;color:var(--gray);font-size:14px}
+.app-preview-bottom {margin-top:auto;padding-top:35px;font-size:13px;color:var(--cyan)}
+.feature-links {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:32px}
+.feature-link {background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px;display:flex;flex-direction:column;min-height:260px;text-decoration:none;transition:border-color .2s}
+.feature-link:hover,.feature-link:focus-visible {border-color:var(--cyan)}
+.feature-count {font-size:12px;color:var(--cyan);letter-spacing:1.3px}
+.feature-link h3 {font-family:'Instrument Serif',serif;font-weight:400;font-size:32px;line-height:1.08;margin:18px 0 10px}
+.feature-link p {font-size:15px;line-height:1.6;color:var(--gray);margin:0 0 20px}
+.feature-link b {font-weight:600;font-size:14px;color:var(--cyan);margin-top:auto}
+.about {display:grid;grid-template-columns:1.3fr 1fr;gap:65px;align-items:center}
+.about-photo img {width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;border-radius:12px;display:block}
+.about-text p:not(.eyebrow) {color:var(--gray);max-width:780px;font-size:16px;line-height:1.85}
 
-.app-promo h2 {
-  font-family:'Instrument Serif',serif;
-  font-size:clamp(65px,6.5vw,110px);
-  line-height:.97;
-  letter-spacing:-1px;
-  font-weight:400;
-  margin:15px 0 35px;
+/* new live sky layout */
+.sky-page {padding-top:64px}
+.sky-page .section-heading {align-items:end}
+.sky-page .section-heading h1 {margin:10px 0}
+.sky-map-layout {display:grid;grid-template-columns:minmax(0,1.65fr) minmax(260px,.65fr);gap:22px;margin-top:20px}
+.canvas-wrap {border:1px solid var(--border);background:#0B1423;border-radius:14px;padding:12px;overflow:hidden}
+.canvas-wrap canvas {display:block;width:100%;height:auto;max-height:650px;min-height:320px;object-fit:contain;cursor:crosshair}
+.map-help {font-size:12px;color:var(--gray);text-align:center}
+.map-switches {display:flex;gap:16px;flex-wrap:wrap}
+.switch-line {display:flex;align-items:center;gap:8px;font-size:14px;color:var(--gray);white-space:nowrap}
+.switch-line input {width:17px;height:17px;accent-color:var(--cyan)}
+.constellation-panel {background:#0B1423;border:1px solid var(--border);border-radius:14px;padding:22px;min-width:0}
+.constellation-panel h3 {font-family:'Instrument Serif',serif;font-weight:400;font-size:33px;line-height:1.15;margin:0 0 4px}
+.constellation-panel .muted {font-size:13px;color:var(--gray)}
+.constellation-list {display:flex;flex-direction:column;gap:7px;max-height:345px;overflow-y:auto;padding-right:5px;margin:20px 0}
+.constellation-option {text-align:left;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:11px 12px;color:var(--white);font-size:13px}
+.constellation-option:hover,.constellation-option[aria-pressed="true"] {border-color:var(--cyan);color:var(--cyan)}
+.mini-btn {padding:9px 11px;font-size:12px;min-height:40px}
+.object-heading {margin-top:45px}
+.selected-star {align-items:center}
+.star-actions {justify-content:flex-start;max-width:250px}
+.guide-banner {border-top:1px solid var(--border);text-align:left}
+.guide-banner>p:not(.eyebrow) {color:var(--gray)}
+
+/* ask nova gets its own proper page */
+.ask-page,.guide-page {max-width:1250px;padding-top:72px}
+.ask-page .nova-voice {margin:42px 0 28px}
+.ask-suggestions {padding:28px 0 50px;border-bottom:1px solid var(--border)}
+.question-examples {display:flex;gap:10px;flex-wrap:wrap}
+.question-examples button {background:var(--card);border:1px solid var(--border);border-radius:9px;color:var(--white);font:inherit;font-size:14px;padding:13px 18px}
+.question-examples button:hover {border-color:var(--cyan)}
+.quiet-cta {display:flex;justify-content:space-between;gap:20px;align-items:center;color:var(--gray);font-size:14px}
+.quiet-cta a {color:var(--cyan)}
+.guide-steps {margin:60px 0}
+.guide-info {padding:55px 0;border-top:1px solid var(--border)}
+.guide-info h2 {font-size:clamp(37px,4vw,56px);margin:0 0 20px}
+.guide-info p:not(.eyebrow) {max-width:880px;color:var(--gray)}
+.keyboard-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:30px}
+.keyboard-grid div {display:flex;gap:24px;align-items:center;justify-content:space-between;background:var(--card);padding:22px;border:1px solid var(--border);border-radius:12px}
+.keyboard-grid strong {color:var(--cyan);white-space:nowrap}
+.keyboard-grid span {color:var(--gray);font-size:14px}
+.guide-buttons {display:flex;gap:14px;flex-wrap:wrap}
+
+@media(max-width:1100px) {
+ .navbar .site-nav {gap:14px}
+ .sky-map-layout {grid-template-columns:1fr}
+ .constellation-list {max-height:250px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .feature-links {grid-template-columns:repeat(2,minmax(0,1fr))}
 }
-
-.app-promo h2 em {
-  color:var(--cyan);
-  font-style:normal;
-}
-
-.app-intro {
-  font-size:22px;
-  color:var(--white);
-  max-width:480px;
-  line-height:1.5;
-}
-
-.app-desc {
-  color:var(--gray);
-  font-size:16px;
-  line-height:1.8;
-  max-width:510px;
-  margin-top:20px;
-}
-
-.app-highlights {
-  display:flex;
-  gap:15px;
-  flex-wrap:wrap;
-  margin:30px 0 45px;
-}
-
-.app-highlights span {
-  border:1px solid var(--border);
-  padding:9px 13px;
-  border-radius:7px;
-  color:var(--gray);
-  font-size:13px;
-}
-
-.app-download {
-  display:flex;
-  flex-direction:column;
-  align-items:flex-start;
-  gap:12px;
-}
-
-.app-download p {
-  letter-spacing:2px;
-  color:var(--cyan);
-  font-size:12px;
-  font-weight:600;
-  margin:0;
-}
-
-.app-store-badge img {
-  width:185px;
-  height:auto;
-  display:block;
-}
-
-.coming-soon {
-  font-size:13px;
-  color:var(--gray);
-}
-
-
-/* app right side */
-
-.app-promo-right {
-  position:relative;
-  min-height:510px;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-}
-
-.app-orbit {
-  position:absolute;
-  border:1px solid #30425C;
-  border-radius:50%;
-  pointer-events:none;
-}
-
-.orbit-one {
-  width:520px;
-  height:520px;
-}
-
-.orbit-two {
-  width:390px;
-  height:390px;
-  border-color:#426A91;
-}
-
-.app-preview {
-  position:relative;
-  z-index:2;
-  width:310px;
-  min-height:425px;
-  padding:45px 25px 25px;
-  border-radius:30px;
-  background:#080E1B;
-  border:1px solid #426A91;
-
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  text-align:center;
-
-  box-shadow:0 20px 80px rgba(0,0,0,.3);
-}
-
-.app-icon {
-  width:175px;
-  height:175px;
-  border-radius:38px;
-  overflow:hidden;
-  margin-bottom:26px;
-  box-shadow:0 0 50px rgba(104,225,255,.13);
-}
-
-.app-icon img {
-  width:100%;
-  height:100%;
-  object-fit:cover;
-}
-
-.app-preview h3 {
-  font-family:'Instrument Serif',serif;
-  font-size:48px;
-  font-weight:400;
-  margin:0;
-}
-
-.app-preview > p {
-  color:var(--gray);
-  margin:0;
-  font-size:14px;
-}
-
-.app-preview-bottom {
-  margin-top:auto;
-  display:flex;
-  align-items:center;
-  gap:10px;
-  color:var(--gray);
-  font-size:12px;
-  padding-top:35px;
-}
-
-.app-small-dot {
-  height:7px;
-  width:7px;
-  background:var(--cyan);
-  border-radius:50%;
-}
-
-.app-side-label {
-  position:absolute;
-  bottom:-8px;
-  right:0;
-  color:var(--violet);
-  font-size:11px;
-  letter-spacing:2px;
-}
-
-
-/* smaller screens */
-
 @media(max-width:900px) {
-  .app-promo {
-    grid-template-columns:1fr;
-    padding:55px 7%;
-  }
-
-  .app-promo-right {
-    min-height:440px;
-  }
+ .app-promo {grid-template-columns:1fr;padding:55px 6%}
+ .app-promo-right {min-height:450px}
+ .about {grid-template-columns:1fr;gap:32px}
+ .about-photo img {max-width:600px}
+ .navbar {flex-wrap:wrap}
+ .navbar .site-nav {order:3;width:100%;justify-content:space-between;flex-wrap:wrap}
+ .sky-page .section-heading {flex-direction:column;align-items:flex-start}
 }
-
-@media(max-width:550px) {
-  .app-promo {
-    margin:20px 4% 50px;
-    padding:45px 24px;
-    gap:20px;
-  }
-
-  .app-promo h2 {
-    font-size:63px;
-  }
-
-  .app-promo-right {
-    min-height:385px;
-  }
-
-  .app-preview {
-    width:260px;
-    min-height:355px;
-  }
-
-  .app-icon {
-    width:135px;
-    height:135px;
-    border-radius:30px;
-  }
-
-  .orbit-one {
-    width:350px;
-    height:350px;
-  }
-
-  .orbit-two {
-    width:285px;
-    height:285px;
-  }
-
-  .app-side-label {
-    display:none;
-  }
+@media(max-width:650px) {
+ .app-promo {margin:16px 4% 50px;padding:42px 22px}
+ .app-promo h2 {font-size:62px}
+ .app-promo-right {min-height:390px}
+ .app-preview {width:260px;min-height:360px}
+ .app-icon {width:132px;height:132px;border-radius:28px}
+ .orbit-one {width:365px;height:365px}.orbit-two {width:285px;height:285px}
+ .feature-links,.keyboard-grid {grid-template-columns:1fr}
+ .constellation-list {grid-template-columns:1fr}
+ .map-switches {align-items:flex-start;flex-direction:column;gap:9px}
+ .quiet-cta {flex-direction:column;align-items:flex-start}
+ .footer-nav {gap:12px}
+ .canvas-wrap canvas {min-height:220px}
+}
+@media(prefers-reduced-motion:reduce) {
+ * {scroll-behavior:auto !important;transition:none !important}
 }

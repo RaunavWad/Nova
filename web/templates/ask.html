@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% set page='ask' %}
+{% block title %}Ask NOVA — Astronomy voice assistant{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static',filename='voice-mode.css') }}">{% endblock %}
+{% block content %}
+<section class="content-section ask-page">
+ <p class="eyebrow">YOUR ASTRONOMY COMPANION</p><h1 class="page-title">Ask the universe <em>anything</em></h1>
+ <p class="page-lead">Speak or type your astronomy questions and hear the answers through NOVA's voice</p>
+ {% include 'voice_panel.html' %}
+ <div class="ask-suggestions"><p class="eyebrow">TRY ASKING</p><div class="question-examples">
+   <button type="button" data-example="Why does Saturn have rings">Why does Saturn have rings ↗</button>
+   <button type="button" data-example="What color is the Sun">What color is the Sun ↗</button>
+   <button type="button" data-example="What makes a black hole">What makes a black hole ↗</button>
+ </div></div>
+ <div class="quiet-cta"><p>NOVA answers astronomy and space questions only</p><a href="{{ url_for('explore') }}">Explore the live sky ↗</a></div>
+</section>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static',filename='voice-mode.js') }}"></script><script src="{{ url_for('static',filename='ask-page.js') }}"></script>{% endblock %}

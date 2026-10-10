@@ -22,6 +22,9 @@ voice_routes = Blueprint('voice_routes', __name__)
 MAX_AUDIO = 8 * 1024 * 1024
 REFUSAL = 'I am NOVA, your astronomy guide  Ask me about the universe, stars, planets or space exploration'
 
+# use a named free model on retries instead of random free routing
+BACKUP_MODEL = 'qwen/qwen3-next-80b-a3b-instruct:free'
+
 # give NOVA_SIGNING_KEY a permanent secret in .env for a deployed website
 # for local testing, a random one is fine (old tokens stop working after restart)
 _secret = os.getenv('NOVA_SIGNING_KEY', '').strip() or secrets.token_hex(32)
@@ -104,7 +107,45 @@ def voice_status():
     )
 
 
-def call_router(messages, max_tokens, temperature=0):
+def read_chat_content(response, service):
+    # check for hidden provider errors even when the request has status 200
+    try:
+        body = response.json()
+        if body.get('error'):
+            raise RuntimeError(service + ' returned a provider error')
+        choice = body['choices'][0]
+        if choice.get('error') or choice.get('finish_reason') in ('content_filter', 'error'):
+            raise RuntimeError(service + ' did not return a normal answer')
+        message = choice['message']
+        if message.get('refusal'):
+            raise RuntimeError(service + ' refused the response')
+        content = message.get('content')
+        if isinstance(content, list):
+            content = ' '.join(str(item.get('text', '')) for item in content if isinstance(item, dict))
+        if not isinstance(content, str) or not content.strip():
+            raise RuntimeError(service + ' returned an empty message')
+        return content.strip()
+    except (ValueError, TypeError, KeyError, IndexError, AttributeError):
+        raise RuntimeError(service + ' sent an unreadable response')
+
+
+def real_astronomy_answer(answer):
+    # some free models return safety classifications instead of answering
+    if not isinstance(answer, str):
+        return False
+    text = answer.strip()
+    if len(re.findall(r"[\w']+", text)) < 7:
+        return False
+    if re.search(r'\b(?:user|assistant|system|content|input|output)\s+safety\s*:', text, re.I):
+        return False
+    if re.match(r'^(?:safety\s*(?:rating|label|classification|assessment)|\s*(?:allow|block|safe|unsafe)\b)', text, re.I):
+        return False
+    if re.search(r'\b(?:this question is safe|safety verdict|safety category|safety score)\b', text, re.I):
+        return False
+    return True
+
+
+def call_router(messages, max_tokens, temperature=0, model=None):
     response = requests.post(
         'https://openrouter.ai/api/v1/chat/completions',
         headers={
@@ -113,7 +154,7 @@ def call_router(messages, max_tokens, temperature=0):
             'X-OpenRouter-Title': 'NOVA Astronomy'
         },
         json={
-            'model': os.getenv('NOVA_GUARD_MODEL', '').strip() or os.getenv('OPENROUTER_MODEL', 'openrouter/free'),
+            'model': model or os.getenv('NOVA_GUARD_MODEL', '').strip() or os.getenv('OPENROUTER_MODEL', 'openrouter/free'),
             'messages': messages,
             'max_tokens': max_tokens,
             'temperature': temperature
@@ -122,7 +163,7 @@ def call_router(messages, max_tokens, temperature=0):
     )
     if not response.ok:
         raise RuntimeError(get_error(response, 'OpenRouter'))
-    content = response.json()['choices'][0]['message']['content']
+    content = read_chat_content(response, 'OpenRouter guard')
     if isinstance(content, list):
         content = ' '.join(str(item.get('text', '')) for item in content if isinstance(item, dict))
     if not isinstance(content, str) or not content.strip():
@@ -208,9 +249,9 @@ def check_with_guard(rules, data):
     ]
 
     # 12 tokens was too short, especially with random free models
-    for limit in (256, 512):
+    for attempt, limit in enumerate((256, 512)):
         try:
-            reply = call_router(messages, max_tokens=limit)
+            reply = call_router(messages, max_tokens=limit, model=BACKUP_MODEL if attempt else None)
         except RuntimeError as e:
             # real HTTP / billing errors should be reported, not disguised
             if 'empty message' not in str(e).lower():
@@ -341,12 +382,26 @@ def ask_nova():
             messages.append({'role': 'assistant', 'content': pair['assistant']})
         messages.append({'role': 'user', 'content': question})
 
-        # change the router model for answering if needed, guard model can be separate
-        answer = call_answer_model(messages)
-        answer = answer.strip()[:1400]
-        if not check_answer(question, answer):
-            print('nova answer rejected by topic guardrail')
-            return answer_package(REFUSAL, True, history)
+        # retry if the model gives us a safety label or unrelated text
+        # check topic first, then make sure the response is an actual answer
+        answer = None
+        primary_model = os.getenv('OPENROUTER_MODEL', '').strip() or 'openrouter/free'
+        for model in (primary_model, BACKUP_MODEL):
+            draft = call_answer_model(messages, model=model).strip()[:1400]
+
+            if not real_astronomy_answer(draft):
+                print('nova got a safety label or non-answer, trying another model')
+                continue
+
+            if not check_answer(question, draft):
+                print('nova answer rejected by output topic check, trying again')
+                continue
+
+            answer = draft
+            break
+
+        if answer is None:
+            return jsonify(error='NOVA could not generate a verified astronomy answer, please try again'), 503
 
         return answer_package(answer, False, history, question)
     except requests.RequestException:
@@ -357,7 +412,7 @@ def ask_nova():
         return jsonify(error='NOVA could not verify an astronomy-only response, please try again'), 503
 
 
-def call_answer_model(messages):
+def call_answer_model(messages, model=None):
     # normal model for the actual answer (can be different from NOVA_GUARD_MODEL)
     response = requests.post(
         'https://openrouter.ai/api/v1/chat/completions',
@@ -367,7 +422,7 @@ def call_answer_model(messages):
             'X-OpenRouter-Title': 'NOVA Astronomy'
         },
         json={
-            'model': os.getenv('OPENROUTER_MODEL', 'openrouter/free'),
+            'model': model or os.getenv('OPENROUTER_MODEL', 'openrouter/free'),
             'messages': messages,
             'max_tokens': 650,
             'temperature': 0.35
@@ -376,12 +431,7 @@ def call_answer_model(messages):
     )
     if not response.ok:
         raise RuntimeError(get_error(response, 'OpenRouter'))
-    content = response.json()['choices'][0]['message']['content']
-    if isinstance(content, list):
-        content = ' '.join(str(item.get('text', '')) for item in content if isinstance(item, dict))
-    if not isinstance(content, str) or not content.strip():
-        raise RuntimeError('OpenRouter returned an empty answer')
-    return content
+    return read_chat_content(response, 'OpenRouter answer')
 
 
 @voice_routes.post('/api/voice/transcribe')

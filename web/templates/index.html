@@ -1,340 +1,79 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#080E1B">
-  <title>Nova</title>
-
-  <!-- same logo for the browser tab -->
-  <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/NOVA Logo No BG.png') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static',filename='voice-mode.css') }}">
-</head>
-<body>
-
-<a href="#main" class="skip">Skip to content</a>
-
-<!-- top bar -->
-<header class="navbar">
-  <a href="#home" class="logo" aria-label="NOVA home">
-    <img src="{{ url_for('static', filename='images/NOVA Logo No BG.png') }}" alt="NOVA"> nova
-  </a>
-
-  <nav aria-label="Main navigation">
-    <a href="#app">Get the app</a>
-    <a href="#explore">Explore the sky</a>
-    <a href="#tours">Constellation tours</a>
-    <a href="#listen">How to listen</a>
-    <a href="#about">About us</a>
-    
-  </nav>
-
-  <button id="audioToggle" class="audio-btn" type="button" aria-pressed="false"
-          aria-label="Enable audio" title="Enable audio"
-          data-on-src="{{ url_for('static', filename='images/audio.png') }}"
-          data-off-src="{{ url_for('static', filename='images/audio off.png') }}">
-    <img id="audioIcon" src="{{ url_for('static', filename='images/audio off.png') }}" alt="" aria-hidden="true">
-    <span id="audioLabel">Enable audio</span>
-  </button>
-</header>
-
-<main id="main">
-
-<!-- main intro -->
+{% extends 'base.html' %}
+{% set page='home' %}
+{% block title %}NOVA — The sky within reach{% endblock %}
+{% block content %}
 <section class="hero" id="home">
   <div class="hero-left">
     <p class="eyebrow"><span aria-hidden="true">✦</span> THE UNIVERSE IS FOR EVERYONE</p>
-
     <h1>The sky,<br><em>within reach</em></h1>
-
-    <p class="hero-desc">
-      A different way to explore the universe
-      Discover real stars through sound, follow their stories
-      and experience astronomy beyond sight
-    </p>
-
+    <p class="hero-desc">A different way to explore the universe<br>Discover real stars through sound, follow their stories and experience astronomy beyond sight</p>
     <div class="hero-actions">
-      <a href="#explore" class="primary-btn">Explore the sky ↗</a>
-      <a href="#about" class="secondary-btn">Our mission</a>
+      <a href="{{ url_for('explore') }}" class="primary-btn">Explore the live sky ↗</a>
+      <a href="{{ url_for('ask_nova') }}" class="secondary-btn">Ask NOVA</a>
     </div>
   </div>
-
   <div class="hero-right">
     <div class="wave" aria-hidden="true">
-      <span style="--h:2px"></span><span style="--h:23px"></span>
-      <span style="--h:45px"></span><span style="--h:17px"></span>
-      <span style="--h:32px"></span><span style="--h:58px"></span>
-      <span style="--h:28px"></span><span style="--h:46px"></span>
-      <span style="--h:23px"></span><span style="--h:36px"></span>
-      <span style="--h:16px"></span><span style="--h:2px"></span>
+      <span style="--h:2px"></span><span style="--h:23px"></span><span style="--h:45px"></span>
+      <span style="--h:17px"></span><span style="--h:32px"></span><span style="--h:58px"></span>
+      <span style="--h:28px"></span><span style="--h:46px"></span><span style="--h:23px"></span>
+      <span style="--h:36px"></span><span style="--h:16px"></span><span style="--h:2px"></span>
     </div>
     <h2>Less looking<br>More discovering</h2>
     <p>Designed for listening<br>Open to everyone</p>
   </div>
 </section>
 
-
-<!--App Store Promo thing-->
-<section class="app-promo" id="app">
-
+<!-- main product first -->
+<section class="app-promo" id="app" aria-labelledby="appPromoTitle">
   <div class="app-promo-left">
-
     <p class="eyebrow">INTRODUCING THE NOVA APP</p>
-
-    <h2>The universe<br>in your <em>hands</em></h2>
-
-    <p class="app-intro">
-      The sky was never meant to be experienced
-      through sight alone
-    </p>
-
-    <p class="app-desc">
-      Point your phone toward the night sky and discover
-      the stars and planets around you through sound,
-      voice guidance and haptic feedback
-    </p>
-
-    <div class="app-highlights">
-      <span>✳ Real time sky</span>
-      <span>✳ Audio discovery</span>
-      <span>✳ Built for accessibility</span>
-    </div>
-
+    <h2 id="appPromoTitle">The universe<br>in your <em>hands</em></h2>
+    <p class="app-intro">The sky was never meant to be experienced through sight alone</p>
+    <p class="app-desc">Point your phone toward the night sky and discover stars and planets through sound, voice guidance and haptic feedback</p>
+    <div class="app-highlights"><span>Real time sky</span><span>Audio discovery</span><span>Built for accessibility</span></div>
     <div class="app-download">
       <p>YOUR NEW WAY TO EXPLORE</p>
-
-      <!-- app store coming soon -->
-      <div class="app-store-badge">
-        <img src="{{ url_for('static',filename='images/app-store-badge.svg') }}"
-             alt="Download on the App Store">
-      </div>
-
+      <img class="store-badge" src="{{ url_for('static',filename='images/app-store-badge.svg') }}" alt="App Store download badge, NOVA is coming soon">
       <span class="coming-soon">Coming soon to iPhone</span>
     </div>
-
   </div>
-
-
-  <!-- right side -->
   <div class="app-promo-right">
-
-    <div class="app-orbit orbit-one"></div>
-    <div class="app-orbit orbit-two"></div>
-
+    <div class="app-orbit orbit-one" aria-hidden="true"></div><div class="app-orbit orbit-two" aria-hidden="true"></div>
     <div class="app-preview">
-
-      <div class="app-icon">
-        <img src="{{ url_for('static',filename='images/NOVA Logo With BG.png') }}"
-             alt="NOVA iPhone app logo">
-      </div>
-
-      <h3>Meet NOVA</h3>
-      <p>Explore beyond sight</p>
-
-      <div class="app-preview-bottom">
-        <span class="app-small-dot"></span>
-        <span>Your universe awaits</span>
-      </div>
-
-    </div>
-
-    <p class="app-side-label">DISCOVER WHAT'S ABOVE YOU ↗</p>
-
-  </div>
-
-</section>
-
-
-
-<!-- live sky -->
-<section class="sky-section" id="explore">
-  <div class="section-heading">
-    <div>
-      <p class="eyebrow">YOUR WINDOW TO THE UNIVERSE</p>
-      <h2>Explore the sky</h2>
-    </div>
-    <div class="tabs" role="group" aria-label="Which stars to display">
-      <button id="yourSkyBtn" type="button" aria-pressed="true">Your sky</button>
-      <button id="allStarsBtn" type="button" aria-pressed="false">All stars</button>
-    </div>
-  </div>
-
-  <div class="sky-settings">
-    <div class="setting">
-      <label for="place">OBSERVING FROM</label>
-      <select id="place">
-        <option value="robbinsville">Robbinsville, NJ</option>
-        <option value="princeton">Princeton, NJ</option>
-        <option value="nyc">New York, NY</option>
-      </select>
-      <button class="small-link" id="locateBtn" type="button">Use my location</button>
-    </div>
-
-    <div class="setting">
-      <label for="skyDate">DATE &amp; TIME</label>
-      <div class="date-control">
-        <input type="datetime-local" id="skyDate">
-        <button id="nowBtn" type="button">Now</button>
-      </div>
-      <p>Choose a time to explore</p>
-    </div>
-
-    <div class="setting">
-      <p class="setting-label">SKY STATUS</p>
-      <h3 id="skyCount">Loading sky</h3>
-      <p id="skyStatus" role="status" aria-live="polite">Preparing your star collection</p>
-    </div>
-  </div>
-
-  {% include 'voice_panel.html' %}
-
-  <div class="explorer">
-    <div class="explorer-heading">
-      <div>
-        <p class="eyebrow">DISCOVER THE STARS</p>
-        <h3>Find your next discovery</h3>
-      </div>
-      <input type="search" id="starSearch" placeholder="Search stars and planets" aria-label="Search stars and planets">
-    </div>
-
-    <p class="help-text">Use Tab to reach the stars and the arrow keys to move between them</p>
-    <p id="collectionLabel" class="help-text" aria-live="polite">Loading star collection</p>
-    <div id="starList" class="star-list" role="group" aria-label="Stars and planets to explore"></div>
-
-    <div class="selected-star">
-      <div>
-        <p class="eyebrow">CURRENTLY EXPLORING</p>
-        <h3 id="starName">Choose a star</h3>
-        <p id="starMeta">Select a star or planet to begin</p>
-        <p id="starFacts"></p>
-        <p id="starDirection"></p>
-      </div>
-
-      <div class="star-actions">
-        <button id="playBtn" type="button" class="primary-btn">Hear description</button>
-        <button id="stopBtn" type="button" class="secondary-btn">Stop audio</button>
-      </div>
-    </div>
-
-    <div class="visual-area">
-      <button id="mapToggle" type="button" class="secondary-btn" aria-expanded="false" aria-controls="mapArea">
-        Show visual star map
-      </button>
-      <div id="mapArea" hidden>
-        <p class="help-text">Select a star or planet on the map or use the arrow keys to navigate and Enter to hear about it</p>
-        <canvas id="skyCanvas" width="820" height="440" tabindex="0"
-          role="group" aria-label="Interactive sky map, use arrow keys to explore stars and planets, press Enter to hear descriptions">
-          Interactive sky map, use the star buttons above if the map is unavailable
-        </canvas>
-      </div>
+      <img class="app-icon" src="{{ url_for('static',filename='images/NOVA Logo With BG.png') }}" alt="NOVA app icon">
+      <h3>Meet NOVA</h3><p>Explore beyond sight</p>
+      <div class="app-preview-bottom">Your universe awaits</div>
     </div>
   </div>
 </section>
 
-<!-- tours -->
-<section class="content-section" id="tours">
-  <p class="eyebrow">EXPLORE THE CONSTELLATIONS</p>
-  <h2>Stories written in the stars</h2>
-  <p class="section-intro">Travel through the sky with guided audio tours and discover the stories behind each constellation</p>
-
-  <div class="tour-grid">
-    <article class="tour-card">
-      <span class="tour-symbol" aria-hidden="true">✧</span>
-      <p class="eyebrow">CONSTELLATION 01</p>
-      <h3>Orion</h3>
-      <p>Explore the hunter and discover his brightest stars</p>
-      <button type="button" data-tour="orion" class="secondary-btn">Start tour ↗</button>
-    </article>
-
-    <article class="tour-card">
-      <span class="tour-symbol" aria-hidden="true">✦</span>
-      <p class="eyebrow">CONSTELLATION 02</p>
-      <h3>Lyra</h3>
-      <p>Discover Vega and the stars surrounding the celestial lyre</p>
-      <button type="button" data-tour="lyra" class="secondary-btn">Start tour ↗</button>
-    </article>
-
-    <article class="tour-card">
-      <span class="tour-symbol" aria-hidden="true">✳</span>
-      <p class="eyebrow">CONSTELLATION 03</p>
-      <h3>Ursa Major</h3>
-      <p>Journey through the Great Bear and the Big Dipper</p>
-      <button type="button" data-tour="ursa" class="secondary-btn">Start tour ↗</button>
-    </article>
-  </div>
-
-  <div id="tourPlayer" class="tour-player" hidden>
-    <p id="tourProgress" class="eyebrow">GUIDED TOUR</p>
-    <h3 id="tourStar">Your tour</h3>
-    <p id="tourText" aria-live="polite"></p>
-    <div class="tour-controls">
-      <button id="prevTour" class="secondary-btn" type="button">Previous</button>
-      <button id="repeatTour" class="secondary-btn" type="button">Hear again</button>
-      <button id="nextTour" class="primary-btn" type="button">Next star →</button>
-      <button id="endTour" class="secondary-btn" type="button">End tour</button>
-    </div>
-  </div>
-</section>
-
-<section class="content-section" id="listen">
-  <p class="eyebrow">HOW TO LISTEN</p>
-  <h2>Your journey starts with sound</h2>
-  <div class="info-grid">
-    <article>
-      <span class="info-num">01</span>
-      <h3>Turn on audio</h3>
-      <p>Use the audio button at the top to enable spoken descriptions</p>
-    </article>
-    <article>
-      <span class="info-num">02</span>
-      <h3>Choose a star</h3>
-      <p>Navigate with your keyboard or select a star by name</p>
-    </article>
-    <article>
-      <span class="info-num">03</span>
-      <h3>Explore and learn</h3>
-      <p>Listen to its position in the sky and discover its story</p>
-    </article>
+<section class="content-section" id="discover">
+  <p class="eyebrow">START EXPLORING</p>
+  <h2>One universe, three ways to discover</h2>
+  <div class="feature-links">
+    <a class="feature-link" href="{{ url_for('explore') }}">
+      <span class="feature-count">01 / LIVE SKY</span><h3>See where the stars are</h3>
+      <p>Real sky positions, planets, and constellation connections for your place and time</p><b>Explore the sky ↗</b>
+    </a>
+    <a class="feature-link" href="{{ url_for('ask_nova') }}">
+      <span class="feature-count">02 / VOICE AI</span><h3>Ask anything about space</h3>
+      <p>Ask an astronomy question by voice or typing and listen to NOVA answer</p><b>Ask NOVA ↗</b>
+    </a>
+    <a class="feature-link" href="{{ url_for('guide') }}">
+      <span class="feature-count">03 / ACCESSIBILITY</span><h3>Navigate beyond sight</h3>
+      <p>Learn keyboard controls, spoken descriptions and how NOVA works</p><b>How to listen ↗</b>
+    </a>
   </div>
 </section>
 
 <section class="content-section about" id="about">
-
   <div class="about-text">
     <p class="eyebrow">WHY WE CREATED NOVA</p>
-    <h2>The universe is for everyone.</h2>
-
-    <p>
-      For centuries people have explored the universe by looking
-      at the stars, but not everyone can experience the sky visually
-    </p>
-
-    <p>
-      NOVA makes astronomy more accessible for blind and visually
-      impaired people by transforming astronomical data into
-      sound, narration and interactive experiences
-    </p>
+    <h2>Astronomy beyond sight</h2>
+    <p>For centuries people have explored the universe by looking at the stars, but not everyone can experience the sky visually</p>
+    <p>NOVA makes astronomy more accessible for blind and visually impaired people by transforming astronomical data into sound, narration and interactive experiences</p>
   </div>
-
-  <div class="about-photo">
-    <img src="{{ url_for('static',filename='images/ourPic.png') }}"
-         alt="The NOVA team">
-  </div>
-
+  <div class="about-photo"><img src="{{ url_for('static',filename='images/ourPic.png') }}" alt="The NOVA team"></div>
 </section>
-
-
-</main>
-
-<footer>
-  <a href="#home" class="logo" aria-label="NOVA home">
-    <img src="{{ url_for('static', filename='images/NOVA Logo No BG.png') }}" alt="NOVA">nova
-  </a>
-  <p>The universe is for everyone</p>
-</footer>
-
-<script src="{{ url_for('static', filename='main.js') }}"></script>
-<script src="{{ url_for('static',filename='voice-mode.js') }}"></script>
-</body>
-</html>
+{% endblock %}
