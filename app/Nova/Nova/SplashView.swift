@@ -8,6 +8,9 @@
 import SwiftUI
 import UIKit
 
+/// Launch animation: a ring draws in around a star, a small moon orbits, the name fades up. About 2.6 seconds
+/// (longer when VoiceOver is on so the name can be read). Tap anywhere to skip. With Reduce Motion on, it is a
+/// calm fade with no movement. The sound is the same "star" chime used in the app.
 struct SplashView: View {
     var onFinish: () -> Void
 
@@ -43,9 +46,7 @@ struct SplashView: View {
                         .offset(y: -84)
                         .rotationEffect(.degrees(orbit))
                         .opacity(ringTrim > 0.95 ? 1 : 0)
-                    Image(systemName: "sparkle")
-                        .font(.system(size: 70, weight: .light))
-                        .foregroundStyle(LinearGradient(colors: [Theme.accent, Theme.violet], startPoint: .top, endPoint: .bottom))
+                    NovaMark(size: 104)
                         .shadow(color: Theme.accent.opacity(glow), radius: 22)
                         .scaleEffect(starScale)
                         .opacity(starOpacity)
@@ -53,12 +54,13 @@ struct SplashView: View {
                 .frame(height: 180)
 
                 VStack(spacing: 10) {
-                    Text("Nova")
-                        .font(AppFont.serif(size: 64))
+                    Text("nova")
+                        .font(AppFont.sans(size: 60, weight: .bold, relativeTo: .largeTitle))
+                        .tracking(-2.5)
                         .foregroundStyle(Theme.text)
                         .opacity(titleOpacity)
                         .offset(y: titleOffset)
-                    Text("Explore the sky by sound and touch")
+                    Text("The universe is for everyone.")
                         .font(AppFont.style(.callout))
                         .foregroundStyle(Theme.textSecondary)
                         .opacity(tagOpacity)
@@ -69,7 +71,7 @@ struct SplashView: View {
         .contentShape(Rectangle())
         .onTapGesture { finish() }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Nova. Explore the sky by sound and touch.")
+        .accessibilityLabel("Nova. The universe is for everyone.")
         .accessibilityHint("Opens automatically. Double tap to continue now.")
         .accessibilityAddTraits(.isButton)
         .task { await run() }

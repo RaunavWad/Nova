@@ -1,3 +1,10 @@
+//
+//  SettingsView.swift
+//  Nova
+//
+//  Created by Vihaan Deshmukh on 10/10/26.
+//
+
 import SwiftUI
 
 struct SettingsView: View {
@@ -12,6 +19,8 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
+            SetupCheckSection()
+
             Section("Speech") {
                 slider("Speech speed", value: $persistence.settings.speechRate, range: 0.1...1, step: 0.05)
                 Picker("Amount of speech", selection: $persistence.settings.verbosity) {
@@ -22,11 +31,17 @@ struct SettingsView: View {
                     .disabled(!speech.premiumAvailable)
                 Text(speech.premiumAvailable
                      ? "When on, the text of descriptions you ask to hear is sent to ElevenLabs to be turned into speech, and saved on this iPhone so it works offline next time. Your location, camera and sensor data are never sent. If it is slow or offline, the built-in voice is used."
-                     : "Premium voice isn't set up in this build, so the built-in voice is used.")
+                     : "Premium voice isn't set up, so the built-in voice is used. " + (ElevenLabsClient.configurationProblem ?? ""))
                     .font(AppFont.style(.footnote))
+                if speech.premiumAvailable {
+                    Button("Test premium voice") { Task { await speech.checkPremium() } }.hapticTap()
+                }
+                if let status = speech.premiumStatus {
+                    Text(status).font(AppFont.style(.footnote)).foregroundStyle(Theme.violet)
+                }
                 slider("Narration volume", value: $persistence.settings.narrationVolume, range: 0.2...1, step: 0.05)
-                Button("Test the voice") { speech.speak("This is how Nova sounds at the current speed and volume.") }
-                Button("Hear the introduction again") { speech.narrate(HomeView.introText) }
+                Button("Test the voice") { speech.narrate("This is how Nova sounds at the current speed and volume.") }.hapticTap()
+                Button("Hear the introduction again") { speech.narrate(HomeView.introText) }.hapticTap()
             }
 
             Section {
@@ -42,8 +57,8 @@ struct SettingsView: View {
                 }
                 Toggle("Guidance tone", isOn: $persistence.settings.guidanceTone)
                 Toggle("3D sound (best with headphones)", isOn: $persistence.settings.spatialAudio)
-                NavigationLink("Calibrate the compass") { CalibrationView() }
-                NavigationLink("Learn the vibration language") { HapticLanguageView() }
+                NavigationLink("Calibrate the compass") { CalibrationView() }.hapticTap()
+                NavigationLink("Learn the vibration language") { HapticLanguageView() }.hapticTap()
             } header: { Text("Guidance") } footer: {
                 Text(haptics.isCoreHapticsSupported
                      ? "Vibration strength is adjustable on this iPhone."
@@ -55,8 +70,8 @@ struct SettingsView: View {
                 slider("Music volume", value: $persistence.settings.ambienceVolume, range: 0...1, step: 0.05)
                 Toggle("Sound effects", isOn: $persistence.settings.effectsEnabled)
                 slider("Effects volume", value: $persistence.settings.effectsVolume, range: 0...1, step: 0.05)
-                Button("Play a sample effect") { audio.play(.star) }
-                Button(audio.isPaused ? "Resume all audio" : "Pause all audio") { audio.isPaused ? audio.resume() : audio.pause() }
+                Button("Play a sample effect") { audio.play(.star) }.hapticTap()
+                Button(audio.isPaused ? "Resume all audio" : "Pause all audio") { audio.isPaused ? audio.resume() : audio.pause() }.hapticTap()
             }
 
             Section {
@@ -66,11 +81,11 @@ struct SettingsView: View {
             }
 
             Section {
-                if !auth.isAvailable {
-                    Text("Sign-in isn't set up in this build. Nova works fully without an account.")
+                if !auth.isAvailable || auth.setupProblem != nil {
+                    Text((auth.setupProblem ?? "Sign-in isn't set up in this build.") + " Nova works fully without an account.")
                 } else if auth.isSignedIn {
                     Text("Signed in as \(auth.displayName ?? auth.email ?? "your Google account").")
-                    Button("Sign out") { auth.signOut(); if let m = auth.message { speech.announce(m) } }
+                    Button("Sign out") { auth.signOut(); if let m = auth.message { speech.announce(m) } }.hapticTap()
                 } else {
                     Button {
                         Task { await auth.signInWithGoogle(); if let m = auth.message { speech.announce(m) } }
@@ -85,8 +100,12 @@ struct SettingsView: View {
             Section {
                 Text("Your location is used only on this iPhone to calculate where objects are. Camera pictures are shown live and are never saved or analysed. Progress is saved only on this device. If you choose to sign in, Google and Firebase receive only your sign-in details.")
                 Text(location.statusDescription)
-                Button("Reset my progress", role: .destructive) { confirmReset = true }
+                Button("Reset my progress", role: .destructive) { confirmReset = true }.hapticTap()
             } header: { Text("Privacy") }
+
+            Section("Fonts") {
+                Text(AppFont.status)
+            }
 
             Section("About accuracy") {
                 Text("Nova calculates where objects should be. It doesn't see the sky, so it can't tell about clouds or buildings. The phone's compass is typically accurate to a few degrees at best, so finding an object means getting close, not telescope-level aiming.")
@@ -98,6 +117,7 @@ struct SettingsView: View {
         .background(StarfieldBackground())
         .foregroundStyle(Theme.text)
         .tint(Theme.accent)
+        .onChange(of: persistence.settings) { _, _ in haptics.play(.select) }
         .onChange(of: persistence.settings.demoMode) { _, _ in if motion.isRunning { motion.start() } }
         .confirmationDialog("Reset all discoveries and achievements?", isPresented: $confirmReset, titleVisibility: .visible) {
             Button("Reset progress", role: .destructive) { persistence.resetProgress(); speech.speak("Progress reset.") }
