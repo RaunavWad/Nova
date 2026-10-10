@@ -10,9 +10,22 @@
 		940D65BC307A9A4F006AFFE2 /* Nova.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nova.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		940D6751307ACFE0006AFFE2 /* Exceptions for "Nova" folder in "Nova" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 940D65BB307A9A4F006AFFE2 /* Nova */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		940D65BE307A9A4F006AFFE2 /* Nova */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				940D6751307ACFE0006AFFE2 /* Exceptions for "Nova" folder in "Nova" target */,
+			);
 			path = Nova;
 			sourceTree = "<group>";
 		};

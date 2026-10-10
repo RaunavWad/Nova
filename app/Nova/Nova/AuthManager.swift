@@ -1,3 +1,10 @@
+//
+//  AuthManager.swift
+//  Nova
+//
+//  Created by Vihaan Deshmukh on 10/10/26.
+//
+
 import Combine
 import Foundation
 import SwiftUI
@@ -56,7 +63,26 @@ final class AuthManager: ObservableObject {
         email = user?.email
     }
 
+    /// Why sign-in can't work yet, in plain words, or nil if everything needed is in place.
+    var setupProblem: String? {
+        if FirebaseApp.app() == nil {
+            return "Google sign-in isn't set up yet: GoogleService-Info.plist is missing from the app. Download it from the Firebase console and add it to the Nova target."
+        }
+        guard let clientID = FirebaseApp.app()?.options.clientID else {
+            return "Google sign-in isn't set up yet: the Firebase file has no client ID. Turn on Google as a sign-in method in the Firebase console, then download GoogleService-Info.plist again."
+        }
+        let reversed = clientID.split(separator: ".").reversed().joined(separator: ".")
+        let types = Bundle.main.object(forInfoDictionaryKey: "CFBundleURLTypes") as? [[String: Any]] ?? []
+        let hasScheme = types.contains { ($0["CFBundleURLSchemes"] as? [String])?.contains(reversed) == true }
+        if !hasScheme {
+            return "Google sign-in isn't set up yet: add this URL scheme in Xcode (Nova target, Info, URL Types): \(reversed)"
+        }
+        return nil
+    }
+
     func signInWithGoogle() async {
+        // Starting Google sign-in without its URL scheme crashes the app, so check first.
+        if let problem = setupProblem { message = problem; return }
         guard isAvailable, let clientID = FirebaseApp.app()?.options.clientID else {
             message = "Sign-in is not set up in this build."; return
         }
@@ -89,7 +115,10 @@ final class AuthManager: ObservableObject {
 
 #else
     func configure() { isAvailable = false }
-    func signInWithGoogle() async { message = "Sign-in is not set up in this build." }
+    var setupProblem: String? {
+        "Google sign-in isn't set up yet: the Firebase and Google Sign-In packages aren't linked to the Nova target. In Xcode, open the Nova target, General, Frameworks, and add FirebaseAuth, FirebaseCore and GoogleSignIn."
+    }
+    func signInWithGoogle() async { message = setupProblem }
     func signOut() {}
     func handle(url: URL) {}
 #endif
