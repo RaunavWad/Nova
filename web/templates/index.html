@@ -7,6 +7,7 @@
 
 <title>NOVA - Explore Beyond Sight</title>
 <link rel="stylesheet" href="{{ url_for('static',filename='style.css') }}">
+<link rel="icon" type="image/png" href="{{ url_for('static', filename='NOVA Logo No BG.png') }}">
 </head>
 
 <body>
@@ -15,7 +16,11 @@
 
 <!-- top nav -->
 <header class="navbar">
-  <a href="#home" class="logo"><span>✶</span> nova</a>
+  
+  <a href="#home" class="logo">
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="">
+    nova
+  </a>
 
   <nav aria-label="Main navigation">
     <a href="#explore">Explore the sky</a>
