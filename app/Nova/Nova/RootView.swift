@@ -7,7 +7,8 @@
 
 import SwiftUI
 
-
+/// Launch flow: animation, then login (only if nobody is signed in and you haven't chosen to continue without),
+/// then the app. A signed-in user (Firebase remembers them) goes straight from the animation to the home screen.
 struct RootView: View {
     @EnvironmentObject var auth: AuthManager
     @AppStorage("novaContinuedWithoutLogin") private var continuedWithoutLogin = false
@@ -26,7 +27,7 @@ struct RootView: View {
                 }
                 .transition(.opacity)
             } else {
-                NavigationStack { HomeView() }
+                MainTabView()
                     .transition(.opacity)
             }
         }
