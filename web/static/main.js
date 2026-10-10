@@ -237,43 +237,88 @@ function drawMap() {
   for(let r of [R,R*2/3,R/3]) {
     ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
   }
-  ctx.beginPath(); ctx.moveTo(cx-R,cy);ctx.lineTo(cx+R,cy);
+  ctx.beginPath();ctx.moveTo(cx-R,cy);ctx.lineTo(cx+R,cy);
   ctx.moveTo(cx,cy-R);ctx.lineTo(cx,cy+R);ctx.stroke();
 
-  let pos = new Map();
+  let pos=new Map();
   mapSpots=[];
   everything.forEach(o=>{
-    if(o.alt<=0) return;
+    if(o.alt<=0)return;
     let p=spot(o);pos.set(o.id,p);
     mapSpots.push({...p,id:o.id});
   });
 
-  // real constellation links from stellarium HIP numbers
-  ctx.strokeStyle='#B7A4FF';ctx.globalAlpha=.4;
+  // the constellation lines stay in the background
+  ctx.strokeStyle='#B7A4FF';ctx.globalAlpha=.35;
   lines.forEach(edge=>{
     let a=pos.get(edge[0]),b=pos.get(edge[1]);
-    if(!a||!b) return;
+    if(!a||!b)return;
     ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
   });
   ctx.globalAlpha=1;
 
+  // first draw every other star so the chosen one is on top
   everything.forEach(o=>{
-    let p=pos.get(o.id);if(!p)return;
-    let isPlanet=o.type==='planet', active=o.id===chosen;
+    let p=pos.get(o.id);if(!p||o.id===chosen)return;
+    let isPlanet=o.type==='planet';
+    ctx.globalAlpha=.8;
     ctx.fillStyle=isPlanet?'#B7A4FF':'#68E1FF';
-    ctx.beginPath();ctx.arc(p.x,p.y,isPlanet?5:Math.max(1.1,3.8-(o.mag||0)*.4),0,Math.PI*2);ctx.fill();
-    if(active) {
-      ctx.strokeStyle='#F4F7FF';ctx.beginPath();ctx.arc(p.x,p.y,12,0,Math.PI*2);ctx.stroke();
-    }
-    if(active || isPlanet || o.mag!==null && o.mag<.6) {
-      ctx.font='12px Instrument Sans';ctx.fillStyle='#F4F7FF';
-      ctx.textAlign='center';ctx.fillText(o.name,p.x,p.y-13);
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,isPlanet?5:Math.max(1.1,3.8-(o.mag||0)*.4),0,Math.PI*2);
+    ctx.fill();
+
+    if(isPlanet || (o.mag!==null && o.mag<.6)) {
+      ctx.font='12px "Instrument Sans",sans-serif';
+      ctx.fillStyle='#F4F7FF';ctx.textAlign='center';
+      ctx.fillText(o.name,p.x,p.y-13);
     }
   });
+  ctx.globalAlpha=1;
 
-  ctx.font='14px Instrument Sans';ctx.textAlign='center';ctx.fillStyle='#A8B6CA';
+  // compass
+  ctx.font='14px "Instrument Sans",sans-serif';
+  ctx.textAlign='center';ctx.fillStyle='#A8B6CA';
   ctx.fillText('N',cx,cy-R-12);ctx.fillText('S',cx,cy+R+21);
   ctx.fillText('E',cx+R+18,cy+4);ctx.fillText('W',cx-R-18,cy+4);
+
+  // big bright highlight for the selected star or planet
+  let picked=everything.find(o=>o.id===chosen);
+  let p=pos.get(chosen);
+  if(picked && p) {
+    ctx.save();
+
+    // soft cyan glow behind it
+    ctx.beginPath();ctx.arc(p.x,p.y,18,0,Math.PI*2);
+    ctx.fillStyle='rgba(104,225,255,.16)';
+    ctx.shadowColor='#68E1FF';ctx.shadowBlur=24;
+    ctx.fill();
+    ctx.shadowBlur=0;
+
+    // two clear rings + bigger center dot
+    ctx.beginPath();ctx.arc(p.x,p.y,21,0,Math.PI*2);
+    ctx.strokeStyle='#B7A4FF';ctx.lineWidth=3;ctx.stroke();
+    ctx.beginPath();ctx.arc(p.x,p.y,13,0,Math.PI*2);
+    ctx.strokeStyle='#F4F7FF';ctx.lineWidth=2;ctx.stroke();
+    ctx.beginPath();ctx.arc(p.x,p.y,6.5,0,Math.PI*2);
+    ctx.fillStyle=picked.type==='planet'?'#B7A4FF':'#68E1FF';ctx.fill();
+
+    // label with a dark background so other stars can't cover it
+    ctx.font='600 15px "Instrument Sans",sans-serif';
+    let name=picked.name;
+    let boxW=ctx.measureText(name).width+26,boxH=32;
+    let x=Math.max(8,Math.min(w-boxW-8,p.x-boxW/2));
+    let y=p.y-61;
+    if(y<8)y=p.y+29;
+
+    ctx.fillStyle='#131D30';ctx.fillRect(x,y,boxW,boxH);
+    ctx.strokeStyle='#68E1FF';ctx.lineWidth=2;
+    ctx.strokeRect(x,y,boxW,boxH);
+    ctx.fillStyle='#F4F7FF';ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.fillText(name,x+boxW/2,y+boxH/2);
+
+    ctx.restore();
+  }
 }
 
 canvas.addEventListener('click',e=>{
@@ -281,7 +326,15 @@ canvas.addEventListener('click',e=>{
   let x=(e.clientX-r.left)*canvas.width/r.width;
   let y=(e.clientY-r.top)*canvas.height/r.height;
   let hits=mapSpots.map(p=>({...p,d:Math.hypot(x-p.x,y-p.y)})).sort((a,b)=>a.d-b.d);
-  if(hits[0] && hits[0].d<15) select(hits[0].id,true);
+  if(hits[0] && hits[0].d<22) select(hits[0].id,true);
+});
+
+// little hand cursor when the mouse is near a star
+canvas.addEventListener('mousemove',e=>{
+  let r=canvas.getBoundingClientRect();
+  let x=(e.clientX-r.left)*canvas.width/r.width;
+  let y=(e.clientY-r.top)*canvas.height/r.height;
+  canvas.style.cursor=mapSpots.some(p=>Math.hypot(x-p.x,y-p.y)<22)?'pointer':'default';
 });
 
 // keyboard on the map itself, goes to next nearest star in that direction
@@ -289,8 +342,7 @@ canvas.addEventListener('keydown',e=>{
   if(!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Enter',' '].includes(e.key)) return;
   e.preventDefault();
   if(e.key==='Enter'||e.key===' ') {
-    audio=true;el('audioToggle').setAttribute('aria-pressed','true');
-    el('audioToggle').textContent='◖ Audio enabled';
+    audio=true;updateAudioButton();
     if(chosen)getStory(chosen,true);return;
   }
   if(!mapSpots.length) return;
@@ -317,16 +369,24 @@ el('starList').addEventListener('keydown',e=>{
   let next=bs[(i+step+bs.length)%bs.length];next.focus();next.click();
 });
 
+// image + text update when audio changes
+function updateAudioButton() {
+  let btn=el('audioToggle');
+  el('audioIcon').src=audio ? btn.dataset.onSrc : btn.dataset.offSrc;
+  el('audioLabel').textContent=audio ? 'Audio enabled' : 'Enable audio';
+  btn.setAttribute('aria-pressed',String(audio));
+  btn.setAttribute('aria-label',audio ? 'Disable audio' : 'Enable audio');
+  btn.title=audio ? 'Disable audio' : 'Enable audio';
+}
+
 el('audioToggle').addEventListener('click',()=>{
   audio=!audio;
-  el('audioToggle').setAttribute('aria-pressed',String(audio));
-  el('audioToggle').textContent=audio?'◖ Audio enabled':'◖ Enable audio';
+  updateAudioButton();
   if(audio) say('Welcome to Nova, choose a star or planet to begin');else stop();
 });
 
 el('playBtn').addEventListener('click',()=>{
-  audio=true;el('audioToggle').setAttribute('aria-pressed','true');
-  el('audioToggle').textContent='◖ Audio enabled';
+  audio=true;updateAudioButton();
   if(chosen) getStory(chosen,true);
 });
 el('stopBtn').addEventListener('click',()=>{

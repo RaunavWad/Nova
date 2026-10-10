@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap');
 
 /* nova colors */
 
@@ -1067,3 +1067,49 @@ footer .logo img { height:39px }
   .logo img { height:38px;max-width:170px }
   footer .logo img { height:34px }
 }
+
+/* audio icon in the nav */
+.audio-btn {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+}
+
+.audio-btn img {
+  height:24px;
+  width:24px;
+  object-fit:contain;
+  flex-shrink:0;
+}
+
+
+/* about us picture */
+
+.about {
+  display:grid;
+  grid-template-columns:1.3fr 1fr;
+  gap:65px;
+  align-items:center;
+}
+
+.about-photo img {
+  width:100%;
+  height:auto;
+  aspect-ratio:4/3;
+  object-fit:cover;
+  border-radius:12px;
+  display:block;
+}
+
+@media(max-width:800px) {
+  .about {
+    grid-template-columns:1fr;
+    gap:30px;
+  }
+
+  .about-photo img {
+    max-width:550px;
+  }
+}
+
