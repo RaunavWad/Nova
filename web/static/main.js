@@ -93,7 +93,7 @@ function showList() {
 
     // using our own icons instead of the random symbols
     let pic=document.createElement('img');
-    pic.src=o.type==='planet'?'/static/planet.png':'/static/star.png';
+    pic.src=o.type==='planet'?'/static/images/planet.png':'/static/images/star.png';
     pic.className='sky-object-icon';
     pic.alt='';
     pic.setAttribute('aria-hidden','true');

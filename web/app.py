@@ -11,6 +11,8 @@ import os
 load_dotenv()
 app = Flask(__name__)
 
+from voice_mode import voice_routes
+app.register_blueprint(voice_routes)
 @app.route('/')
 def home():
     return render_template('index.html')

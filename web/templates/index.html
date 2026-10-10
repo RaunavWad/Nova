@@ -7,8 +7,9 @@
   <title>Nova</title>
 
   <!-- same logo for the browser tab -->
-  <link rel="icon" type="image/png" href="{{ url_for('static', filename='NOVA Logo No BG.png') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/NOVA Logo No BG.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static',filename='voice-mode.css') }}">
 </head>
 <body>
 
@@ -17,7 +18,7 @@
 <!-- top bar -->
 <header class="navbar">
   <a href="#home" class="logo" aria-label="NOVA home">
-    <img src="{{ url_for('static', filename='NOVA Logo No BG.png') }}" alt="NOVA"> nova
+    <img src="{{ url_for('static', filename='images/NOVA Logo No BG.png') }}" alt="NOVA"> nova
   </a>
 
   <nav aria-label="Main navigation">
@@ -31,9 +32,9 @@
 
   <button id="audioToggle" class="audio-btn" type="button" aria-pressed="false"
           aria-label="Enable audio" title="Enable audio"
-          data-on-src="{{ url_for('static', filename='audio.png') }}"
-          data-off-src="{{ url_for('static', filename='audio off.png') }}">
-    <img id="audioIcon" src="{{ url_for('static', filename='audio off.png') }}" alt="" aria-hidden="true">
+          data-on-src="{{ url_for('static', filename='images/audio.png') }}"
+          data-off-src="{{ url_for('static', filename='images/audio off.png') }}">
+    <img id="audioIcon" src="{{ url_for('static', filename='images/audio off.png') }}" alt="" aria-hidden="true">
     <span id="audioLabel">Enable audio</span>
   </button>
 </header>
@@ -105,7 +106,7 @@
 
       <!-- app store coming soon -->
       <div class="app-store-badge">
-        <img src="{{ url_for('static',filename='app-store-badge.svg') }}"
+        <img src="{{ url_for('static',filename='images/app-store-badge.svg') }}"
              alt="Download on the App Store">
       </div>
 
@@ -124,7 +125,7 @@
     <div class="app-preview">
 
       <div class="app-icon">
-        <img src="{{ url_for('static',filename='NOVA Logo With BG.png') }}"
+        <img src="{{ url_for('static',filename='images/NOVA Logo With BG.png') }}"
              alt="NOVA iPhone app logo">
       </div>
 
@@ -185,6 +186,8 @@
       <p id="skyStatus" role="status" aria-live="polite">Preparing your star collection</p>
     </div>
   </div>
+
+  {% include 'voice_panel.html' %}
 
   <div class="explorer">
     <div class="explorer-heading">
@@ -315,7 +318,7 @@
   </div>
 
   <div class="about-photo">
-    <img src="{{ url_for('static',filename='ourPic.png') }}"
+    <img src="{{ url_for('static',filename='images/ourPic.png') }}"
          alt="The NOVA team">
   </div>
 
@@ -326,11 +329,12 @@
 
 <footer>
   <a href="#home" class="logo" aria-label="NOVA home">
-    <img src="{{ url_for('static', filename='NOVA Logo No BG.png') }}" alt="NOVA">nova
+    <img src="{{ url_for('static', filename='images/NOVA Logo No BG.png') }}" alt="NOVA">nova
   </a>
   <p>The universe is for everyone</p>
 </footer>
 
 <script src="{{ url_for('static', filename='main.js') }}"></script>
+<script src="{{ url_for('static',filename='voice-mode.js') }}"></script>
 </body>
 </html>

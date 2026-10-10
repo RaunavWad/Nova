@@ -1,0 +1,39 @@
+<!-- ask nova voice thing -->
+<section class="nova-voice" aria-labelledby="novaAskTitle">
+  <div class="nova-voice-top">
+    <div>
+      <p class="eyebrow">ASK NOVA</p>
+      <h3 id="novaAskTitle">A universe of questions</h3>
+      <p>Ask about any star, planet or constellation and hear NOVA answer</p>
+    </div>
+    <img class="nova-voice-mark" src="{{ url_for('static',filename='images/NOVA Logo No BG.png') }}" alt="" aria-hidden="true">
+  </div>
+
+  <div class="nova-voice-actions">
+    <button id="novaMic" class="nova-voice-mic" type="button">
+      Start speaking
+    </button>
+    <button id="novaFinish" class="nova-voice-quiet" type="button" disabled>Stop and ask</button>
+    <button id="novaCancel" class="nova-voice-quiet" type="button" disabled>Cancel recording</button>
+    <button id="novaStop" class="nova-voice-quiet" type="button">Stop response</button>
+  </div>
+
+  <form id="novaQuestionForm" class="nova-voice-form">
+    <label for="novaQuestion">YOUR QUESTION</label>
+    <div class="nova-voice-input-row">
+      <input id="novaQuestion" type="text" maxlength="650"
+             autocomplete="off" placeholder="Why does Saturn have rings">
+      <button type="submit" class="nova-voice-send">Ask NOVA ↗</button>
+    </div>
+  </form>
+
+  <p id="novaVoiceStatus" class="nova-voice-status" role="status" aria-live="polite">Ready when you are</p>
+
+  <div id="novaVoiceReply" class="nova-voice-reply" hidden>
+    <p class="eyebrow">NOVA SAYS</p>
+    <p id="novaAnswer"></p>
+    <button type="button" id="novaReplay" class="nova-voice-quiet">Hear answer again</button>
+  </div>
+
+  <p class="nova-voice-note">Audio goes to ElevenLabs for transcription and your question goes to OpenRouter</p>
+</section>

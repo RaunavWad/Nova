@@ -1,0 +1,106 @@
+/* ask nova - same colors as the rest of the site */
+.nova-voice {
+  margin:24px 0 28px;
+  padding:32px;
+  border:1px solid var(--border, #30425C);
+  border-radius:14px;
+  background:linear-gradient(115deg,#131D30,#0D1729);
+  color:var(--white,#F4F7FF);
+}
+
+.nova-voice-top {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px;
+}
+.nova-voice-top h3 {
+  font-family:'Instrument Serif',serif;
+  font-size:clamp(34px,3.5vw,53px);
+  font-weight:400;
+  line-height:1.05;
+  margin:0;
+}
+.nova-voice-top p:not(.eyebrow), .nova-voice-note {
+  color:var(--gray,#A8B6CA);
+  max-width:540px;
+}
+.nova-voice-mark {
+  width:140px;
+  max-height:140px;
+  height:auto;
+  object-fit:contain;
+  opacity:.95;
+}
+.nova-voice-actions, .nova-voice-input-row {
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  align-items:center;
+}
+.nova-voice-actions {margin:24px 0}
+.nova-voice button {
+  padding:12px 19px;
+  min-height:46px;
+  border-radius:9px;
+  font-size:14px;
+  font-family:'Instrument Sans',sans-serif;
+  font-weight:600;
+  cursor:pointer;
+}
+.nova-voice button:disabled {opacity:.45;cursor:not-allowed}
+.nova-voice-mic, .nova-voice-send {
+  border:1px solid var(--cyan,#68E1FF);
+  background:var(--cyan,#68E1FF);
+  color:#080E1B;
+}
+.nova-voice-mic[aria-pressed="true"] {
+  color:var(--white,#F4F7FF);
+  background:#50314A;
+  border-color:var(--violet,#B7A4FF);
+}
+.nova-voice-quiet {
+  border:1px solid var(--border,#30425C);
+  color:var(--white,#F4F7FF);
+  background:transparent;
+}
+.nova-voice-quiet:hover:not(:disabled) {border-color:var(--cyan,#68E1FF)}
+.nova-voice-form label {
+  display:block;
+  font-size:12px;
+  letter-spacing:2px;
+  color:var(--cyan,#68E1FF);
+  margin-bottom:10px;
+}
+.nova-voice-form input {
+  min-height:48px;
+  flex:1;
+  min-width:200px;
+  border:1px solid var(--border,#30425C);
+  background:#080E1B;
+  color:var(--white,#F4F7FF);
+  border-radius:9px;
+  padding:12px 14px;
+  font-family:'Instrument Sans',sans-serif;
+  font-size:15px;
+}
+.nova-voice-status {color:var(--violet,#B7A4FF);font-size:14px}
+.nova-voice-reply {
+  border-top:1px solid var(--border,#30425C);
+  margin-top:25px;
+  padding-top:24px;
+}
+.nova-voice-reply #novaAnswer {
+  font-family:'Instrument Sans',sans-serif;
+  font-size:17px;
+  line-height:1.75;
+  color:var(--white,#F4F7FF);
+  max-width:900px;
+}
+.nova-voice-note {font-size:12px;margin:23px 0 0}
+.nova-voice :is(button,input):focus-visible {outline:3px solid var(--violet,#B7A4FF);outline-offset:3px}
+@media(max-width:650px){
+  .nova-voice {padding:22px}
+  .nova-voice-mark {display:none}
+  .nova-voice-input-row>* {width:100%}
+}
