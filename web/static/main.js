@@ -90,7 +90,19 @@ function showList() {
     let b = document.createElement('button');
     b.type='button';
     b.dataset.id=o.id;
-    b.textContent = (o.type==='planet'?'◉ ':'✦ ') + o.name;
+
+    // using our own icons instead of the random symbols
+    let pic=document.createElement('img');
+    pic.src=o.type==='planet'?'/static/planet.png':'/static/star.png';
+    pic.className='sky-object-icon';
+    pic.alt='';
+    pic.setAttribute('aria-hidden','true');
+
+    let name=document.createElement('span');
+    name.textContent=o.name;
+
+    b.append(pic,name);
+    b.setAttribute('aria-label',o.name + (o.name==='Moon'?' moon':o.type==='planet'?' planet':' star'));
     b.setAttribute('aria-pressed',String(o.id===chosen));
     b.addEventListener('click',()=>select(o.id,true));
     box.appendChild(b);
