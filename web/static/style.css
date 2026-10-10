@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap');
+@import url('GOOGLE_FONT');
 
 /* nova colors */
 
@@ -684,6 +684,21 @@ input:focus-visible,select:focus-visible {
 
   padding:12px 20px;
 
+}
+
+/* our star and planet icons */
+.star-list button {
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+}
+
+.sky-object-icon {
+  display:block;
+  width:22px;
+  height:22px;
+  object-fit:contain;
+  flex-shrink:0;
 }
 
 .star-list button:hover,
