@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#080E1B">
-  <title>NOVA - Explore Beyond Sight</title>
+  <title>Nova</title>
 
   <!-- same logo for the browser tab -->
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='NOVA Logo No BG.png') }}">
@@ -21,10 +21,12 @@
   </a>
 
   <nav aria-label="Main navigation">
+    <a href="#app">Get the app</a>
     <a href="#explore">Explore the sky</a>
     <a href="#tours">Constellation tours</a>
     <a href="#listen">How to listen</a>
     <a href="#about">About us</a>
+    
   </nav>
 
   <button id="audioToggle" class="audio-btn" type="button" aria-pressed="false"
@@ -70,6 +72,79 @@
     <p>Designed for listening<br>Open to everyone</p>
   </div>
 </section>
+
+
+<!--App Store Promo thing-->
+<section class="app-promo" id="app">
+
+  <div class="app-promo-left">
+
+    <p class="eyebrow">INTRODUCING THE NOVA APP</p>
+
+    <h2>The universe<br>in your <em>hands</em></h2>
+
+    <p class="app-intro">
+      The sky was never meant to be experienced
+      through sight alone
+    </p>
+
+    <p class="app-desc">
+      Point your phone toward the night sky and discover
+      the stars and planets around you through sound,
+      voice guidance and haptic feedback
+    </p>
+
+    <div class="app-highlights">
+      <span>✳ Real time sky</span>
+      <span>✳ Audio discovery</span>
+      <span>✳ Built for accessibility</span>
+    </div>
+
+    <div class="app-download">
+      <p>YOUR NEW WAY TO EXPLORE</p>
+
+      <!-- app store coming soon -->
+      <div class="app-store-badge">
+        <img src="{{ url_for('static',filename='app-store-badge.svg') }}"
+             alt="Download on the App Store">
+      </div>
+
+      <span class="coming-soon">Coming soon to iPhone</span>
+    </div>
+
+  </div>
+
+
+  <!-- right side -->
+  <div class="app-promo-right">
+
+    <div class="app-orbit orbit-one"></div>
+    <div class="app-orbit orbit-two"></div>
+
+    <div class="app-preview">
+
+      <div class="app-icon">
+        <img src="{{ url_for('static',filename='NOVA Logo With BG.png') }}"
+             alt="NOVA iPhone app logo">
+      </div>
+
+      <h3>Meet NOVA</h3>
+      <p>Explore beyond sight</p>
+
+      <div class="app-preview-bottom">
+        <span class="app-small-dot"></span>
+        <span>Your universe awaits</span>
+      </div>
+
+    </div>
+
+    <p class="app-side-label">DISCOVER WHAT'S ABOVE YOU ↗</p>
+
+  </div>
+
+</section>
+
+
 
 <!-- live sky -->
 <section class="sky-section" id="explore">
