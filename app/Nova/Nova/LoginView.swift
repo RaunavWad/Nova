@@ -8,6 +8,8 @@
 
 import SwiftUI
 
+/// Shown after the launch animation when nobody is signed in. Signing in is optional: "Continue without signing in"
+/// always works, so blind users and anyone without a Google account are never blocked.
 struct LoginView: View {
     var onSkip: () -> Void
 
@@ -21,18 +23,23 @@ struct LoginView: View {
             VStack(spacing: 22) {
                 Spacer(minLength: 20)
 
-                Image(systemName: "sparkle")
-                    .font(.system(size: 54, weight: .light))
-                    .foregroundStyle(LinearGradient(colors: [Theme.accent, Theme.violet], startPoint: .top, endPoint: .bottom))
-                    .accessibilityHidden(true)
+                NovaMark(size: 96)
+                    .shadow(color: Theme.accent.opacity(0.35), radius: 24)
 
-                Text("Nova")
-                    .font(AppFont.serif(size: 56))
+                Text("nova")
+                    .font(AppFont.sans(size: 52, weight: .bold, relativeTo: .largeTitle))
+                    .tracking(-2)
                     .foregroundStyle(Theme.text)
+                    .accessibilityLabel("Nova")
                     .accessibilityAddTraits(.isHeader)
 
+                Text("The universe is for everyone.")
+                    .font(AppFont.serif(size: 24, relativeTo: .title2))
+                    .foregroundStyle(Theme.accent)
+                    .multilineTextAlignment(.center)
+
                 Text("Sign in with Google and Nova will greet you by name. Everything works without an account.")
-                    .font(AppFont.style(.callout))
+                    .font(AppFont.style(.footnote))
                     .foregroundStyle(Theme.textSecondary)
                     .multilineTextAlignment(.center)
 
