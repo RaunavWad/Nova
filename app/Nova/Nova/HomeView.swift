@@ -1,3 +1,10 @@
+//
+//  HomeView.swift
+//  Nova
+//
+//  Created by Vihaan Deshmukh on 10/10/26.
+//
+
 import SwiftUI
 
 struct HomeView: View {
@@ -6,19 +13,51 @@ struct HomeView: View {
     @EnvironmentObject var location: LocationManager
     @EnvironmentObject var haptics: HapticsManager
     @EnvironmentObject var auth: AuthManager
+    @EnvironmentObject var router: AppRouter
 
     static let introText = "Welcome to Nova. Point your phone at the sky and I'll tell you what's there, or guide you to a star with vibrations and sound. " +
         "I work out where objects should be from your location, the time, and your phone's compass. I can't see the sky, so I can't tell if clouds or buildings are in the way. " +
         "For your safety, stand still on safe ground while you point, and never walk while using the app. You can skip this introduction in Settings."
 
-    private var greeting: String { auth.firstName.map { "Hi, \($0)" } ?? "Hi there" }
+    private var greeting: String { auth.firstName.map { "Hi, \($0)!" } ?? "Hi there!" }
+
+    private var moonLine: String {
+        let p = AstronomyEngine.moonPhase(date: Date())
+        return "\(p.name.capitalized), about \(Int((p.fraction * 100).rounded())) percent lit"
+    }
 
     var body: some View {
-        Screen(title: "Nova") {
+        Screen(title: "Nova", showsTitle: false) {
+            NovaHeader()
+                .padding(.top, 4)
+                .padding(.bottom, 6)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(greeting)
+                    .font(AppFont.serif(size: 46))
+                    .foregroundStyle(Theme.text)
+                    .accessibilityAddTraits(.isHeader)
+                Text("The universe is for everyone.")
+                    .font(AppFont.style(.title3))
+                    .foregroundStyle(Theme.textSecondary)
+            }
+            .padding(.bottom, 4)
+
             if persistence.settings.demoMode {
                 Panel {
                     Label("Demo mode is on", systemImage: "wand.and.stars").font(AppFont.style(.headline, .semibold))
                     Text("Pointing is simulated and the location is a fixed demo location. Turn it off in Settings to use the real sensors.")
+                        .font(AppFont.style(.subheadline))
+                }
+                .accessibilityElement(children: .combine)
+            }
+
+            if !SetupCheck.missingPermissions.isEmpty {
+                Panel {
+                    Label("Setup needed", systemImage: "exclamationmark.triangle").font(AppFont.style(.headline, .semibold))
+                    Text("These permission texts are missing from the app, so iOS never shows its popups: " +
+                         SetupCheck.missingPermissions.map(\.title).joined(separator: ", ") +
+                         ". Open Settings > Setup check for the fix.")
                         .font(AppFont.style(.subheadline))
                 }
                 .accessibilityElement(children: .combine)
@@ -34,10 +73,23 @@ struct HomeView: View {
                 }
             }
 
-            Text(greeting)
-                .font(AppFont.display(.largeTitle)).foregroundStyle(Theme.text)
-                .accessibilityAddTraits(.isHeader)
-            Text("Explore the night sky with sound and touch.").font(AppFont.display(.title3)).foregroundStyle(Theme.textSecondary)
+            // Tonight, as a glass card.
+            HStack(spacing: 14) {
+                Image(systemName: "moon.stars.fill")
+                    .font(.system(size: 26))
+                    .foregroundStyle(Theme.violet)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Tonight").font(AppFont.style(.subheadline, .semibold)).foregroundStyle(Theme.textSecondary)
+                    Text(moonLine).font(AppFont.style(.headline, .semibold)).foregroundStyle(Theme.text)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .novaGlass(in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Tonight. Moon phase: \(moonLine).")
 
             if auth.isAvailable && !auth.isSignedIn {
                 AppButton(title: "Sign in with Google", systemImage: "person.crop.circle", prominent: false,
@@ -46,23 +98,36 @@ struct HomeView: View {
                 }
             }
 
-            NavigationLink { ExploreView() } label: { Label("Explore", systemImage: "binoculars") }
-                .buttonStyle(BigButtonStyle()).accessibilityHint("Hear what is above the horizon tonight.")
-            NavigationLink { FindObjectView() } label: { Label("Find an Object", systemImage: "scope") }
-                .buttonStyle(BigButtonStyle()).accessibilityHint("Choose a star, planet or the Moon and be guided to it with vibration and sound.")
-            NavigationLink { IdentifyView() } label: { Label("What am I pointing at?", systemImage: "questionmark.circle") }
-                .buttonStyle(BigButtonStyle()).accessibilityHint("Point your phone at the sky and hear which object should be there.")
-            NavigationLink { SkyCameraView() } label: { Label("Sky Camera", systemImage: "camera.viewfinder") }
-                .buttonStyle(BigButtonStyle(prominent: false))
-                .accessibilityHint("A live camera view with labels, for sighted helpers. It can also describe the view aloud.")
-            NavigationLink { DiscoveriesView() } label: { Label("My Discoveries", systemImage: "book") }
-                .buttonStyle(BigButtonStyle(prominent: false))
-            NavigationLink { MissionsView() } label: { Label("Missions", systemImage: "flag") }
-                .buttonStyle(BigButtonStyle(prominent: false))
-            NavigationLink { AchievementsView() } label: { Label("Achievements", systemImage: "rosette") }
-                .buttonStyle(BigButtonStyle(prominent: false))
-            NavigationLink { SettingsView() } label: { Label("Settings", systemImage: "gearshape") }
-                .buttonStyle(BigButtonStyle(prominent: false))
+            AppButton(title: "Find an object", systemImage: "scope",
+                      hint: "Choose a star, planet or the Moon and be guided to it with vibration and sound.") {
+                router.tab = .find
+            }
+
+            Button {
+                haptics.play(.select)
+                router.tab = .explore
+            } label: {
+                FeatureRow(icon: "binoculars.fill", title: "Explore", subtitle: "Hear what is above the horizon tonight")
+            }
+            .buttonStyle(CardButtonStyle())
+            .accessibilityLabel("Explore")
+            .accessibilityHint("Hear what is above the horizon tonight.")
+
+            Button {
+                haptics.play(.select)
+                router.tab = .identify
+            } label: {
+                FeatureRow(icon: "questionmark.circle.fill", title: "What am I pointing at?", subtitle: "Point at the sky and hear what should be there")
+            }
+            .buttonStyle(CardButtonStyle())
+            .accessibilityLabel("What am I pointing at?")
+            .accessibilityHint("Point your phone at the sky and hear which object should be there.")
+
+            NavigationLink { SkyCameraView() } label: {
+                FeatureRow(icon: "camera.viewfinder", title: "Sky Camera", subtitle: "Live camera with labels, for sighted helpers", tint: Theme.violet)
+            }
+            .buttonStyle(CardButtonStyle())
+            .accessibilityHint("A live camera view with labels, for sighted helpers. It can also describe the view aloud.")
 
             AppButton(title: "Hear the introduction", systemImage: "speaker.wave.2", prominent: false) {
                 speech.narrate(Self.introText)
@@ -72,7 +137,7 @@ struct HomeView: View {
         .onAppear {
             if !persistence.settings.hasHeardIntro {
                 persistence.settings.hasHeardIntro = true
-                speech.narrate("\(greeting). " + Self.introText)
+                speech.narrate("\(greeting) " + Self.introText)
             }
         }
     }
