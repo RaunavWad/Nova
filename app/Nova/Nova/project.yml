@@ -1,0 +1,65 @@
+#
+//  project.yml
+//  Nova
+//
+//  Created by Vihaan Deshmukh on 10/10/26.
+//
+
+name: Nova
+options:
+    bundleIdPrefix: com.base2.Nova
+    iOS: "27.0"
+settings:s
+  base:
+    SWIFT_VERSION: "5.0"
+    TARGETED_DEVICE_FAMILY: "1"
+    DEVELOPMENT_TEAM: "base2"
+    
+    # google sign in
+packages:
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk
+    from: 11.0.0
+  GoogleSignIn:
+    url: https://github.com/google/GoogleSignIn-iOS
+    from: 8.0.0
+targets:
+  Nova:
+    type: application
+    platform: iOS
+    sources:
+    - Sources
+    - path: Resources
+      excludes: ["Info.plist"]
+    dependencies: # adding dependencies for firebase/ google sign in
+      - package: Firebase
+        product: FirebaseCore
+      - package: Firebase
+        product: FirebaseAuth
+      - package: GoogleSignIn
+        product: GoogleSignIn
+    info:
+      path: Resources/Info.plist
+      properties:
+        CFBundleDisplayName: Nova
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UIAppFonts: # adding all the fonts for the app
+          - InstrumentSans-Regular.ttf
+          - InstrumentSans-Medium.ttf
+          - InstrumentSans-SemiBold.ttf
+          - InstrumentSans-Bold.ttf
+          - InstrumentSerif-Regular.ttf
+        CFBundleURLTypes:
+          - CFBundleURLSchemes:
+              - com.googleusercontent.apps.REPLACE_WITH_REVERSED_CLIENT_ID   # from GoogleService-Info.plist (REVERSED_CLIENT_ID)
+        NSCameraUsageDescription: "Nova shows a live camera view with labels for where stars, planets and the Moon should be. Pictures are never saved, analysed or uploaded."
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        NSLocationWhenInUseUsageDescription: "Nova uses your approximate location only on this iPhone to calculate where stars, planets and the Moon are in your sky. It is never uploaded."
+  NovaTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [Tests]
+    dependencies:
+      - target: Nova
