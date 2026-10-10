@@ -1,0 +1,176 @@
+
+<!-- nova landing page -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>NOVA - Skies For The Blind</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+<a href="#main" class="skip-link">Skip to Content</a>
+
+<!-- nav bar -->
+<header class="navbar">
+    <a href="/" class="logo">NOVA</a>
+
+    <nav aria-label="Main navigation">
+      <a href="#about">About</a>
+      <a href="#features">Features</a>
+      <a href="#explore">Explore</a>
+    </nav>
+</header>
+
+
+<main id="main">
+
+  <!-- main big section -->
+  <section class="hero">
+
+    <p class="eyebrow">SKIES FOR THE BLIND</p>
+
+    <h1>Astronomy Is <span>For Everyone.</span></h1>
+
+    <p class="hero-description">
+      NOVA is an accessible astronomy platform helping
+      blind and visually impaired people experience the
+      night sky through sound, narration, and exploration.
+    </p>
+
+    <div class="hero-buttons">
+        <a href="#explore" class="btn-primary">Start Exploring</a>
+        <a href="#about" class="btn-secondary">Our Mission</a>
+    </div>
+
+    <p class="small-text">
+      Audio Guided &bull; Keyboard Accessible
+    </p>
+
+  </section>
+
+
+  <!-- about nova -->
+  <section class="section" id="about">
+
+    <p class="eyebrow">ABOUT NOVA</p>
+    <h2>Astronomy Beyond Sight.</h2>
+
+    <p>
+      Most astronomy experiences rely on being able to see the
+      night sky. For people who are blind or visually impaired,
+      this can make exploring the universe much harder.
+    </p>
+
+    <p>
+      NOVA changes how people explore the universe.
+      By transforming real astronomical data into sound,
+      speech and interactive experiences, we want to make
+      astronomy accessible for everyone, regardless of sight.
+    </p>
+
+  </section>
+
+
+  <!-- features section -->
+  <section id="features" class="section">
+
+    <p class="eyebrow">THE EXPERIENCE</p>
+    <h2>Explore the Sky Your Way.</h2>
+
+    <div class="feature-grid">
+
+      <article class="feature-card">
+        <h3>Audio Star Map</h3>
+        <p>
+          Discover real stars using keyboard controls and
+          spoken descriptions of their positions and facts.
+        </p>
+      </article>
+
+      <article class="feature-card">
+        <h3>Real-Time Night Sky</h3>
+        <p>
+          Explore stars based on your location, date, and
+          time to learn what is above you in the sky.
+        </p>
+      </article>
+
+      <article class="feature-card">
+        <h3>Constellation Tours</h3>
+        <p>
+          Learn about different constellations through
+          narrated journeys and directional audio.
+        </p>
+      </article>
+
+      <article class="feature-card">
+        <h3>Spatial Audio</h3>
+        <p>
+          Experience stars using sounds from different
+          directions to better understand the night sky.
+        </p>
+      </article>
+
+    </div>
+  </section>
+
+
+  <!-- try exploring -->
+  <section id="explore" class="section">
+
+    <p class="eyebrow">EXPLORE THE UNIVERSE</p>
+    <h2>Your Journey Starts Here.</h2>
+
+    <p>
+      Start discovering the stars through sound.
+      Choose a star below to learn more about it.
+    </p>
+
+    <div class="explorer-box">
+
+      <p class="eyebrow">CHOOSE A STAR</p>
+
+      <div class="star-buttons" id="starButtons">
+        <button type="button" data-star="sirius">Sirius</button>
+        <button type="button" data-star="vega">Vega</button>
+        <button type="button" data-star="betelgeuse">Betelgeuse</button>
+      </div>
+
+      <div class="star-info">
+        <h3 id="starName">Sirius</h3>
+
+        <p id="starDescription" aria-live="polite">
+          Sirius is the brightest star in the night sky.
+        </p>
+
+        <div class="audio-buttons">
+          <button type="button" id="playAudio" class="btn-primary">
+            Hear Description
+          </button>
+
+          <button type="button" id="stopAudio" class="btn-secondary">
+            Stop Audio
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+  </section>
+
+</main>
+
+
+<!-- bottom of website -->
+<footer>
+  <p>NOVA - Explore Beyond Sight</p>
+  <p>Making astronomy accessible for everyone.</p>
+</footer>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
