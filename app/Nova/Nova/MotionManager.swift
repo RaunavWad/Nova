@@ -1,3 +1,10 @@
+//
+//  MotionManager.swift
+//  Nova
+//
+//  Created by Vihaan Deshmukh on 10/10/26.
+//
+
 import Foundation
 import CoreMotion
 import Combine

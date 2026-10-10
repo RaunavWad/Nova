@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 extension CelestialObject {
     var title: String { name.prefix(1).uppercased() + name.dropFirst() }
