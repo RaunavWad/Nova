@@ -1,11 +1,20 @@
+//
+//  SpeechManager.swift
+//  Nova
+//
+//  Created by Vihaan Deshmukh on 10/10/26.
+//
+
+import Combine
 import Foundation
-import AVFoundation
+@preconcurrency import AVFoundation
 import UIKit
 
 /// Spoken output. Uses AVSpeechSynthesizer for narration. If VoiceOver is running and the user prefers it,
 /// short status messages are posted as VoiceOver announcements instead so the two voices never talk over each other.
 @MainActor
 final class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate, AVAudioPlayerDelegate {
+    let objectWillChange = ObservableObjectPublisher()   // explicit, so strict-import Xcode versions accept the conformance
     @Published private(set) var isSpeaking = false
     @Published private(set) var isPaused = false
     @Published private(set) var lastSpoken: String = ""
