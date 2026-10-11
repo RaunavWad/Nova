@@ -1,171 +1,362 @@
-// nova sounds for all pages
-// one file for all this stuff is way easier than repeating it everywhere
+// Sounds and page switching for NOVA
+// The navbar stays on the page, so the music doesn't start over when you switch tabs
 
 (() => {
-  const btn = document.getElementById('audioToggle');
-  if (!btn) return;
+  const button = document.getElementById('audioToggle');
+  const main = document.getElementById('main');
+  if (!button || !main) return;
 
   const icon = document.getElementById('audioIcon');
   const label = document.getElementById('audioLabel');
   const errorBox = document.getElementById('audioProblem');
+
   const modes = ['off', 'full', 'voice'];
-  const names = {off:'Audio off', full:'Full audio', voice:'Voice only'};
-  const icons = {off:btn.dataset.offSrc, full:btn.dataset.onSrc, voice:btn.dataset.halfSrc};
+  const modeNames = {
+    off: 'Audio off',
+    full: 'Full audio',
+    voice: 'Voice only'
+  };
 
-  // the sounds are in static/sounds, NOT static/sound
-  const ambient = new Audio(btn.dataset.ambientUrl);
-  ambient.loop = true;
-  ambient.preload = 'auto';
-  ambient.volume = .18;
+  const images = {
+    off: button.dataset.offSrc || '/static/images/audio off.png',
+    full: button.dataset.onSrc || '/static/images/audio.png',
+    voice: button.dataset.halfSrc || '/static/images/audioHalf.png'
+  };
 
-  // a few copies let quick clicks overlap a bit
-  const clicks = Array.from({length:4}, () => {
-    let a = new Audio(btn.dataset.clickUrl);
-    a.preload = 'auto';
-    a.volume = .7;
-    return a;
-  });
+  const musicPath = button.dataset.ambientUrl || '/static/sounds/ambient.mp3';
+  const clickPath = button.dataset.clickUrl || '/static/sounds/click_effect.mp3';
+
+  // Only make one music player, even when someone switches pages
+  const music = new Audio(musicPath);
+  music.loop = true;
+  music.volume = 0.3;
+  music.preload = 'auto';
+
+  // A few click players make repeated clicks sound better
+  const clickSounds = [];
+  for (let i = 0; i < 5; i++) {
+    const sound = new Audio(clickPath);
+    sound.volume = 0.85;
+    sound.preload = 'auto';
+    clickSounds.push(sound);
+  }
 
   let clickIndex = 0;
-  let talking = false;
-  let warned = new Set();
   let mode = 'off';
+  let talking = false;
 
-  // keep the setting when you go between pages
   try {
-    let saved = sessionStorage.getItem('nova_audio_mode');
+    const saved = sessionStorage.getItem('nova_audio_mode');
     if (modes.includes(saved)) mode = saved;
-    let oldTime = Number(sessionStorage.getItem('nova_music_time'));
-    if (Number.isFinite(oldTime) && oldTime > 0) {
-      ambient.addEventListener('loadedmetadata', () => {
-        if (Number.isFinite(ambient.duration) && ambient.duration > 0)
-          ambient.currentTime = oldTime % ambient.duration;
-      }, {once:true});
-    }
   } catch (err) {
-    // storage might be disabled, its not a big deal
+    // Storage can be disabled in some browsers, which is fine
   }
 
-  function problem(file, err) {
+  function showError(file, err) {
     if (err?.name === 'AbortError') return;
-    if (err?.name === 'NotAllowedError') {
-      // Chrome sometimes blocks music after switching pages
-      console.info('NOVA audio waiting for another click');
-      return;
-    }
-    console.warn('NOVA audio failed:', file, err);
-    if (warned.has(file)) return;
-    warned.add(file);
+    console.warn('NOVA audio problem:', file, err);
+    if (!errorBox) return;
+
     errorBox.hidden = false;
-    errorBox.textContent = 'Sound could not load: ' + file + '  Check static/sounds and try refreshing';
+    errorBox.textContent = err?.name === 'NotAllowedError'
+      ? 'Click the page once to allow audio'
+      : 'Could not play ' + file + ' — check static/sounds';
   }
 
-  ambient.addEventListener('error', () => problem('ambient.mp3', ambient.error));
-  clicks.forEach(a => a.addEventListener('error', () => problem('click_effect.mp3', a.error)));
+  music.addEventListener('error', () => showError('ambient.mp3', music.error));
+  clickSounds[0].addEventListener('error', () => {
+    showError('click_effect.mp3', clickSounds[0].error);
+  });
 
-  function music() {
-    if (mode !== 'full' || !ambient.paused) return;
-    ambient.volume = talking ? .045 : .18;
-    let play = ambient.play();
-    if (play) play.catch(err => problem('ambient.mp3', err));
-  }
-
-  function clickSound() {
+  function playMusic() {
     if (mode !== 'full') return;
-    let a = clicks[clickIndex];
-    clickIndex = (clickIndex + 1) % clicks.length;
+    music.volume = talking ? 0.08 : 0.3;
+    if (!music.paused) return;
+
+    music.play().then(() => {
+      if (errorBox) errorBox.hidden = true;
+    }).catch(err => showError('ambient.mp3', err));
+  }
+
+  function playClick() {
+    if (mode !== 'full') return;
+
+    const sound = clickSounds[clickIndex];
+    clickIndex = (clickIndex + 1) % clickSounds.length;
+
     try {
-      a.pause();
-      a.currentTime = 0;
-      let play = a.play();
-      if (play) play.catch(err => problem('click_effect.mp3', err));
+      sound.pause();
+      sound.currentTime = 0;
+      sound.play().catch(err => showError('click_effect.mp3', err));
     } catch (err) {
-      problem('click_effect.mp3', err);
+      showError('click_effect.mp3', err);
     }
   }
 
   function updateButton() {
     const next = modes[(modes.indexOf(mode) + 1) % modes.length];
-    label.textContent = names[mode];
-    icon.src = icons[mode];
-    btn.setAttribute('aria-label', names[mode] + ', select for ' + names[next]);
-    btn.setAttribute('aria-pressed', String(mode !== 'off'));
-    btn.title = names[mode] + ' — click for ' + names[next];
+    if (icon) icon.src = images[mode];
+    if (label) label.textContent = modeNames[mode];
+    button.title = modeNames[mode];
+    button.setAttribute('aria-label', modeNames[mode] + ', switch to ' + modeNames[next]);
+    button.setAttribute('aria-pressed', String(mode !== 'off'));
   }
 
-  function changeMode(next) {
+  function setMode(next) {
     if (!modes.includes(next)) return;
     mode = next;
-    try { sessionStorage.setItem('nova_audio_mode', mode); } catch (err) {}
+
+    try {
+      sessionStorage.setItem('nova_audio_mode', mode);
+    } catch (err) {}
 
     updateButton();
+
     if (mode === 'full') {
-      music();
+      playMusic();
     } else {
-      // no background track or clicks in voice only
-      ambient.pause();
+      music.pause();
+      clickSounds.forEach(sound => {
+        sound.pause();
+        sound.currentTime = 0;
+      });
     }
 
-    // other pages use this so their narration knows when we're muted
-    document.dispatchEvent(new CustomEvent('nova:modechange', {detail:{mode}}));
+    // Explore and Ask NOVA use this when their narration is muted
+    document.dispatchEvent(new CustomEvent('nova:modechange', {
+      detail: { mode }
+    }));
   }
 
-  // IMPORTANT: clicking this is a user gesture, so the browser lets us play
-  btn.addEventListener('click', () => {
+  button.addEventListener('click', () => {
     const next = modes[(modes.indexOf(mode) + 1) % modes.length];
-    changeMode(next);
-    if (next === 'full') clickSound();
+    setMode(next);
+    if (next === 'full') playClick();
   });
 
-  // a basic sound test is handy since the actual mp3 files are on your computer
-  document.getElementById('novaTestSound')?.addEventListener('click', () => {
-    changeMode('full');
-    clickSound();
-    document.getElementById('novaTestStatus').textContent =
-      'Music and click effect requested  If you hear nothing, check the sound paths above';
-  });
+  // Play effects on pointer DOWN so links can't interrupt the sound
+  // The click event below is for people using a keyboard
+  function clickable(target) {
+    return target instanceof Element && target.closest(
+      'button, a, summary, select, canvas, [role="button"]'
+    );
+  }
 
-  // button effects on every page, not just the sky map
-  document.addEventListener('click', e => {
-    if (e.target.closest('#audioToggle, #novaTestSound')) return;
-    if (mode !== 'full') return;
-    music();
-    if (e.target.closest('button, a, canvas, summary, select, [role="button"]')) clickSound();
-  }, true);
-
-  // if the browser blocked autoplay after navigating, try again on a gesture
   document.addEventListener('pointerdown', e => {
-    if (mode === 'full' && !e.target.closest('#audioToggle')) music();
+    if (mode !== 'full') return;
+    playMusic();
+    if (e.target.closest('#audioToggle, #novaTestSound')) return;
+    if (clickable(e.target)) playClick();
   }, true);
+
+  document.addEventListener('click', e => {
+    if (mode !== 'full' || e.detail !== 0 || !e.isTrusted) return;
+    if (e.target.closest('#audioToggle, #novaTestSound')) return;
+    if (clickable(e.target)) playClick();
+  }, true);
+
+  // After a refresh, some browsers want one click before music can play
   document.addEventListener('keydown', e => {
-    if (mode === 'full' && (e.key === 'Enter' || e.key === ' ')) music();
+    if (mode === 'full' && (e.key === 'Enter' || e.key === ' ')) {
+      playMusic();
+    }
   }, true);
 
-  // music can restart when a background tab becomes active
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && mode === 'full') music();
+  // The Guide page might get loaded later, so use one shared listener
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#novaTestSound')) return;
+    setMode('full');
+    playMusic();
+    playClick();
+
+    const status = document.getElementById('novaTestStatus');
+    if (status) status.textContent = 'Playing ambient music and a click effect';
   });
 
-  window.addEventListener('pagehide', () => {
-    try { sessionStorage.setItem('nova_music_time', String(ambient.currentTime || 0)); }
-    catch (err) {}
-  });
-
-  // this is used by the sky page and Ask NOVA
   window.novaAudio = {
     getMode: () => mode,
-    setMode: changeMode,
+    setMode,
     canSpeak: () => mode !== 'off',
-    playClick: clickSound,
-    duck: on => {
-      talking = Boolean(on);
-      ambient.volume = talking ? .045 : .18;
+    playClick,
+    duck: isTalking => {
+      talking = Boolean(isTalking);
+      music.volume = talking ? 0.08 : 0.3;
     },
-    test: () => {changeMode('full'); clickSound();}
+    test: () => {
+      setMode('full');
+      playClick();
+    }
   };
 
   updateButton();
-  // a saved Full audio setting may be blocked after page navigation
-  // we'll retry when they click anywhere
-  if (mode === 'full') music();
+  if (mode === 'full') playMusic();
+
+  // Switch NOVA pages without reloading the browser
+  // We keep old pages hidden in the document so their scripts still find them
+  // This also keeps the same background song playing while you move around
+  const pageCache = document.createElement('div');
+  pageCache.hidden = true;
+  pageCache.style.display = 'none';
+  pageCache.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(pageCache);
+
+  const pages = new Map();
+  const loadedScripts = new Set();
+  let navigationNumber = 0;
+  const routes = ['/', '/explore', '/ask', '/guide'];
+
+  function pagePath(url) {
+    const path = url.pathname.replace(/\/$/, '') || '/';
+    return routes.includes(path) ? path : null;
+  }
+
+  // Save whichever page opened first
+  pages.set(pagePath(new URL(location.href)), Array.from(main.childNodes));
+  document.querySelectorAll('script[src]').forEach(script => {
+    loadedScripts.add(new URL(script.src, location.href).pathname);
+  });
+
+  function loadScript(src) {
+    const path = new URL(src, location.href).pathname;
+    if (loadedScripts.has(path)) return Promise.resolve();
+    loadedScripts.add(path);
+
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = resolve;
+      script.onerror = () => {
+        loadedScripts.delete(path);
+        reject(new Error('Could not load ' + path));
+      };
+      document.body.appendChild(script);
+    });
+  }
+
+  function updateNav(path) {
+    document.querySelectorAll('.site-nav a').forEach(link => {
+      const current = pagePath(new URL(link.href)) === path;
+      if (current) link.setAttribute('aria-current', 'page');
+      else link.removeAttribute('aria-current');
+    });
+  }
+
+  async function switchPage(address, addHistory = true) {
+    const url = new URL(address, location.href);
+    const path = pagePath(url);
+    if (!path) {
+      location.href = url.href;
+      return;
+    }
+
+    const number = ++navigationNumber;
+    let files = [];
+    let styles = [];
+
+    if (!pages.has(path)) {
+      try {
+        const res = await fetch(url.pathname + url.search);
+        if (!res.ok) throw new Error('Page not found');
+
+        const html = new DOMParser().parseFromString(await res.text(), 'text/html');
+        const newMain = html.getElementById('main');
+        if (!newMain) throw new Error('Page content missing');
+
+        pages.set(path, Array.from(newMain.childNodes));
+        files = [...html.querySelectorAll('script[src]')]
+          .map(script => script.getAttribute('src'));
+        styles = [...html.querySelectorAll('link[rel="stylesheet"]')]
+          .map(link => link.getAttribute('href'));
+      } catch (err) {
+        console.warn('NOVA page loading problem:', err);
+        location.href = url.href;
+        return;
+      }
+    }
+
+    if (number !== navigationNumber) return;
+
+    // Stop the mic and any answer if someone leaves Ask NOVA
+    if (pagePath(new URL(location.href)) === '/ask' && path !== '/ask') {
+      document.getElementById('novaCancel')?.click();
+      document.getElementById('novaStop')?.click();
+    }
+
+    // Park the old page instead of deleting it
+    // It stays in the DOM but isn't visible anymore
+    for (const node of Array.from(main.childNodes)) {
+      pageCache.appendChild(node);
+    }
+
+    if (addHistory) history.pushState({}, '', url.href);
+    main.replaceChildren(...pages.get(path));
+    document.title = {
+      '/': 'NOVA | Home',
+      '/explore': 'NOVA | Explore Sky',
+      '/ask': 'NOVA | Ask NOVA',
+      '/guide': 'NOVA | How to Listen'
+    }[path];
+    updateNav(path);
+
+    // Ask NOVA has its own CSS. Only add each stylesheet once
+    for (const href of styles) {
+      const fullUrl = new URL(href, location.href).href;
+      const exists = [...document.querySelectorAll('link[rel="stylesheet"]')]
+        .some(link => link.href === fullUrl);
+      if (!exists) {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = fullUrl;
+        document.head.appendChild(link);
+      }
+    }
+
+    // Run the sky / voice script when its page is first opened
+    try {
+      for (const file of files) await loadScript(file);
+    } catch (err) {
+      console.warn('NOVA could not start this page:', err);
+      location.href = url.href;
+      return;
+    }
+
+    // Used by "Ask NOVA about this" on the star map
+    if (path === '/ask') {
+      const star = url.searchParams.get('about');
+      const question = document.getElementById('novaQuestion');
+      if (star && star.length < 90 && question) {
+        question.value = 'Tell me about ' + star;
+      }
+    }
+
+    if (url.hash) {
+      const anchor = document.getElementById(decodeURIComponent(url.hash.slice(1)));
+      if (anchor) anchor.scrollIntoView();
+    } else {
+      window.scrollTo(0, 0);
+    }
+
+    document.dispatchEvent(new CustomEvent('nova:pagechange', {
+      detail: { page: path }
+    }));
+  }
+
+  // Only handle NOVA's own page links, not outside links or downloads
+  document.addEventListener('click', e => {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const link = e.target instanceof Element ? e.target.closest('a[href]') : null;
+    if (!link || link.target || link.hasAttribute('download') || link.hasAttribute('data-reload')) return;
+
+    const url = new URL(link.href, location.href);
+    if (url.origin !== location.origin || !pagePath(url)) return;
+    if (url.pathname === location.pathname && url.search === location.search && url.hash) return;
+
+    e.preventDefault();
+    switchPage(url.href);
+  });
+
+  // Browser Back and Forward should still work normally
+  window.addEventListener('popstate', () => {
+    switchPage(location.href, false);
+  });
 })();

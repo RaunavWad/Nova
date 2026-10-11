@@ -1,16 +1,21 @@
 from flask import Flask, render_template, request, jsonify, send_file
 from datetime import datetime, timezone
+from pathlib import Path
 from dotenv import load_dotenv
 from sky_data import get_sky, object_info, fact_for
 from functools import lru_cache
 from io import BytesIO
 import requests
+import math
 import re
 import os
 
-load_dotenv()
-app = Flask(__name__)
+# Load settings from this folder even when Flask starts somewhere else
+load_dotenv(Path(__file__).with_name(".env"))
+
 from voice_mode import voice_routes
+
+app = Flask(__name__)
 app.register_blueprint(voice_routes)
 
 @app.route('/')
@@ -37,21 +42,22 @@ def sky():
         lat = float(request.args.get('lat',40.2146))
         lon = float(request.args.get('lon',-74.6193))
         at = request.args.get('at')
-        if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+        if not (math.isfinite(lat) and math.isfinite(lon) and -90 <= lat <= 90 and -180 <= lon <= 180):
             return jsonify(error='Location is invalid'),400
         dt = datetime.fromisoformat(at.replace('Z','+00:00')) if at else datetime.now(timezone.utc)
         if not dt.tzinfo or not (1900 <= dt.year <= 2050):
             return jsonify(error='Use a valid date with a timezone from 1900 to 2050'),400
         return jsonify(get_sky(lat,lon,dt))
-    except ValueError as e:
+    except (ValueError, OverflowError):
         return jsonify(error='Invalid sky settings'),400
-    except Exception as e:
-        print('sky error',type(e).__name__)
+    except Exception as error:
+        print('Sky error:', type(error).__name__)
         return jsonify(error='Could not load the sky data, check the Flask terminal'),500
 
 
 @lru_cache(maxsize=400)
 def ai_text(id):
+    # Look up the object first so the model cannot invent a made-up star
     item = object_info(id)
     if not item: return None
     facts = fact_for(item)
@@ -85,7 +91,7 @@ def ai_text(id):
 @app.post('/api/describe')
 def describe():
     data = request.get_json(silent=True) or {}
-    id = data.get('id','')
+    id = data.get('id', '') if isinstance(data, dict) else ''
     if not isinstance(id,str) or len(id)>60:
         return jsonify(error='Invalid object'),400
     answer = ai_text(id)
@@ -108,7 +114,7 @@ def voice_audio(id):
     key = os.getenv('ELEVENLABS_API_KEY')
     voice = os.getenv('ELEVENLABS_VOICE_ID','').strip()
     if not key or not voice: return None
-    if not re.fullmatch(r'[A-Za-z0-9_-]{6,80}',voice):
+    if not re.fullmatch(r'[A-Za-z0-9_-]{6,80}', voice):
         raise ValueError('Voice ID is invalid')
 
     story = ai_text(id)
@@ -131,7 +137,7 @@ def voice_audio(id):
 @app.post('/api/speak')
 def speak():
     data = request.get_json(silent=True) or {}
-    id = data.get('id','')
+    id = data.get('id', '') if isinstance(data, dict) else ''
     if not isinstance(id,str) or len(id)>60:
         return jsonify(error='Invalid object'),400
     if not os.getenv('ELEVENLABS_API_KEY') or not os.getenv('ELEVENLABS_VOICE_ID'):

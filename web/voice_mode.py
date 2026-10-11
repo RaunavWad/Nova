@@ -21,7 +21,7 @@ load_dotenv(Path(__file__).with_name('.env'))
 
 voice_routes = Blueprint('voice_routes', __name__)
 MAX_AUDIO = 8 * 1024 * 1024
-REFUSAL = 'I am NOVA, your astronomy guide  Ask me about the universe, stars, planets or space exploration'
+REFUSAL = 'I am NOVA, your astronomy guide — ask me about the universe, stars, planets, or space exploration'
 
 # backup for when the first model only returns a safety label
 BACKUP_MODEL = 'qwen/qwen3-next-80b-a3b-instruct:free'
@@ -72,7 +72,7 @@ def router_key():
 
 
 def get_error(response, service):
-    # don't send raw provider errors back to the website
+    # Keep provider details and keys out of the browser
     print(service, 'api error', response.status_code)
     if response.status_code in (401, 403):
         return service + ' denied the request, check the API key'
@@ -269,15 +269,15 @@ def router_chat(messages, max_tokens, model, temperature=0):
 
 
 def valid_answer(text):
-    # stop weird provider safety labels before they get spoken aloud
+    # Don't read model metadata out loud by mistake
     if not real_astronomy_answer(text):
         return False
     if OTHER_TOPICS.search(text):
         return False
     if re.match(r"^\s*(?:sorry|i (?:cannot|can't) (?:help|answer)|as an ai)", text, re.I):
         return False
-    # ask the model to mention the astronomy subject by name
-    return bool(SPACE_WORDS.search(text))
+    # Ask for an astronomy subject, but do not reject a good short follow-up
+    return bool(SPACE_WORDS.search(text) or len(text.split()) >= 14)
 
 
 def get_history(token):
@@ -349,13 +349,14 @@ def ask_nova():
     if topic is None:
         try:
             topic = ask_topic_model(question, history)
-        except (requests.RequestException, RuntimeError, ValueError) as e:
-            print('nova topic check unavailable:', type(e).__name__)
-        if topic is not True:
-            return answer_package(
-                'Ask me about a planet, star, constellation, or another astronomy topic',
-                True, history
-            )
+        except (requests.RequestException, RuntimeError, ValueError) as error:
+            # This is an API error, not proof that the question is off-topic
+            print('NOVA topic check failed:', type(error).__name__)
+            return jsonify(error='Could not check the topic right now — please try again'), 502
+        if topic is None:
+            return jsonify(error='Could not verify the topic — try mentioning the star or planet'), 502
+        if topic is False:
+            return answer_package(REFUSAL, True, history)
 
     direction = clean_field(context.get('direction'), 100)
     place = clean_field(context.get('place'), 100)

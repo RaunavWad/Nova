@@ -1,11 +1,14 @@
 {% extends 'base.html' %}
 {% set page='home' %}
-{% block title %}NOVA Home{% endblock %}
+{% block title %}NOVA | Home{% endblock %}
 {% block content %}
 <section class="hero" id="home">
   <div class="hero-left">
-    <p class="eyebrow"><span aria-hidden="true">✦</span> THE UNIVERSE IS FOR EVERYONE</p>
-    <h1>The sky,<br><em>within reach</em></h1>
+    <p class="eyebrow">
+<span aria-hidden="true">✦</span> THE UNIVERSE IS FOR EVERYONE</p>
+    <h1>The sky,<br>
+<em>within reach</em>
+</h1>
     <p class="hero-desc">A different way to explore the universe<br>Discover real stars through sound, follow their stories and experience astronomy beyond sight</p>
     <div class="hero-actions">
       <a href="{{ url_for('explore') }}" class="primary-btn">Explore the live sky ↗</a>
@@ -14,10 +17,30 @@
   </div>
   <div class="hero-right">
     <div class="wave" aria-hidden="true">
-      <span style="--h:2px"></span><span style="--h:23px"></span><span style="--h:45px"></span>
-      <span style="--h:17px"></span><span style="--h:32px"></span><span style="--h:58px"></span>
-      <span style="--h:28px"></span><span style="--h:46px"></span><span style="--h:23px"></span>
-      <span style="--h:36px"></span><span style="--h:16px"></span><span style="--h:2px"></span>
+      <span style="--h:2px">
+</span>
+<span style="--h:23px">
+</span>
+<span style="--h:45px">
+</span>
+      <span style="--h:17px">
+</span>
+<span style="--h:32px">
+</span>
+<span style="--h:58px">
+</span>
+      <span style="--h:28px">
+</span>
+<span style="--h:46px">
+</span>
+<span style="--h:23px">
+</span>
+      <span style="--h:36px">
+</span>
+<span style="--h:16px">
+</span>
+<span style="--h:2px">
+</span>
     </div>
     <h2>Less looking<br>More discovering</h2>
     <p>Designed for listening<br>Open to everyone</p>
@@ -28,10 +51,15 @@
 <section class="app-promo" id="app" aria-labelledby="appPromoTitle">
   <div class="app-promo-left">
     <p class="eyebrow">INTRODUCING THE NOVA APP</p>
-    <h2 id="appPromoTitle">The universe<br>in your <em>hands</em></h2>
+    <h2 id="appPromoTitle">The universe<br>in your <em>hands</em>
+</h2>
     <p class="app-intro">The sky was never meant to be experienced through sight alone</p>
     <p class="app-desc">Point your phone toward the night sky and discover stars and planets through sound, voice guidance and haptic feedback</p>
-    <div class="app-highlights"><span>Real time sky</span><span>Audio discovery</span><span>Built for accessibility</span></div>
+    <div class="app-highlights">
+<span>Real time sky</span>
+<span>Audio discovery</span>
+<span>Built for accessibility</span>
+</div>
     <div class="app-download">
       <p>YOUR NEW WAY TO EXPLORE</p>
       <img class="store-badge" src="{{ url_for('static',filename='images/app-store-badge.svg') }}" alt="App Store download badge, NOVA is coming soon">
@@ -39,10 +67,14 @@
     </div>
   </div>
   <div class="app-promo-right">
-    <div class="app-orbit orbit-one" aria-hidden="true"></div><div class="app-orbit orbit-two" aria-hidden="true"></div>
+    <div class="app-orbit orbit-one" aria-hidden="true">
+</div>
+<div class="app-orbit orbit-two" aria-hidden="true">
+</div>
     <div class="app-preview">
       <img class="app-icon" src="{{ url_for('static',filename='images/NOVA Logo With BG.png') }}" alt="NOVA app icon">
-      <h3>Meet NOVA</h3><p>Explore beyond sight</p>
+      <h3>Meet NOVA</h3>
+<p>Explore beyond sight</p>
       <div class="app-preview-bottom">Your universe awaits</div>
     </div>
   </div>
@@ -53,16 +85,22 @@
   <h2>One universe, three ways to discover</h2>
   <div class="feature-links">
     <a class="feature-link" href="{{ url_for('explore') }}">
-      <span class="feature-count">01 / LIVE SKY</span><h3>See where the stars are</h3>
-      <p>Real sky positions, planets, and constellation connections for your place and time</p><b>Explore the sky ↗</b>
+      <span class="feature-count">01 / LIVE SKY</span>
+<h3>See where the stars are</h3>
+      <p>Real sky positions, planets, and constellation connections for your place and time</p>
+<b>Explore the sky ↗</b>
     </a>
     <a class="feature-link" href="{{ url_for('ask_nova') }}">
-      <span class="feature-count">02 / VOICE AI</span><h3>Ask anything about space</h3>
-      <p>Ask an astronomy question by voice or typing and listen to NOVA answer</p><b>Ask NOVA ↗</b>
+      <span class="feature-count">02 / VOICE AI</span>
+<h3>Ask anything about space</h3>
+      <p>Ask an astronomy question by voice or typing and listen to NOVA answer</p>
+<b>Ask NOVA ↗</b>
     </a>
     <a class="feature-link" href="{{ url_for('guide') }}">
-      <span class="feature-count">03 / ACCESSIBILITY</span><h3>Navigate beyond sight</h3>
-      <p>Learn keyboard controls, spoken descriptions and how NOVA works</p><b>How to listen ↗</b>
+      <span class="feature-count">03 / ACCESSIBILITY</span>
+<h3>Navigate beyond sight</h3>
+      <p>Learn keyboard controls, spoken descriptions and how NOVA works</p>
+<b>How to listen ↗</b>
     </a>
   </div>
 </section>
@@ -74,6 +112,8 @@
     <p>For centuries people have explored the universe by looking at the stars, but not everyone can experience the sky visually</p>
     <p>NOVA makes astronomy more accessible for blind and visually impaired people by transforming astronomical data into sound, narration and interactive experiences</p>
   </div>
-  <div class="about-photo"><img src="{{ url_for('static',filename='images/ourPic.png') }}" alt="The NOVA team"></div>
+  <div class="about-photo">
+<img src="{{ url_for('static',filename='images/ourPic.png') }}" alt="The NOVA team">
+</div>
 </section>
 {% endblock %}
