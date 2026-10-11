@@ -7,6 +7,7 @@
 <title>{% block title %}NOVA | Home{% endblock %}</title>
 <link rel="icon" type="image/png" href="{{ url_for('static',filename='images/NOVA Logo No BG.png') }}">
 <link rel="stylesheet" href="{{ url_for('static',filename='style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static',filename='branding.css') }}">
 
 {% block head %}{% endblock %}
 </head>
@@ -14,7 +15,11 @@
 <a href="#main" class="skip">Skip to content</a>
 <header class="navbar">
   <a href="{{ url_for('home') }}" class="logo" aria-label="NOVA home">
-    <img src="{{ url_for('static',filename='images/NOVA Logo No BG.png') }}" alt="NOVA">nova
+    <div class="nova-brand-row">
+      <img src="{{ url_for('static',filename='images/NOVA Logo No BG.png') }}" alt="">
+      nova
+    </div>
+    <small class="nova-brand-credit">base2</small>
   </a>
   <nav class="site-nav" aria-label="Main navigation">
     <a href="{{ url_for('home') }}" {% if page=='home' %}aria-current="page"{% endif %}>Home</a>
@@ -39,7 +44,11 @@
 <main id="main">{% block content %}{% endblock %}</main>
 <footer>
   <a class="logo" href="{{ url_for('home') }}" aria-label="NOVA home">
-    <img src="{{ url_for('static',filename='images/NOVA Logo No BG.png') }}" alt="NOVA">nova
+    <div class="nova-brand-row">
+      <img src="{{ url_for('static',filename='images/NOVA Logo No BG.png') }}" alt="">
+      nova
+    </div>
+    <small class="nova-brand-credit">base2</small>
   </a>
   <p>The universe is for everyone</p>
   <nav class="footer-nav" aria-label="Footer navigation">

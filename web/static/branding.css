@@ -1,0 +1,34 @@
+/* Little base2 credit under the NOVA logo */
+.logo {
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+/* Keep the icon and the NOVA name beside each other */
+.nova-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  white-space: nowrap;
+}
+
+.nova-brand-credit {
+  color: var(--gray, #a8b6ca);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  line-height: 1;
+  text-transform: lowercase;
+  text-align: center;
+}
+
+footer .nova-brand-credit {
+  font-size: 15px;
+}
+
+@media (max-width: 650px) {
+  .nova-brand-row {
+    gap: 10px;
+  }
+}
