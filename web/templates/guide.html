@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
 {% set page='guide' %}
-{% block title %}How to listen — NOVA{% endblock %}
+{% block title %}Nova Guide{% endblock %}
 {% block content %}
+<!-- quick help for people using NOVA with audio or a keyboard -->
 <section class="content-section guide-page">
  <p class="eyebrow">YOUR GUIDE TO NOVA</p>
  <h1 class="page-title">A sky you can <em>hear</em></h1>
@@ -17,7 +18,15 @@
    <div><strong>Enter</strong><span>Hear more about the currently selected object</span></div><div><strong>Escape</strong><span>Clear any selected star or constellation while using the map</span></div>
    <div><strong>Search</strong><span>Look up a star or planet by name instead of using the map</span></div>
  </div></section>
- <section class="guide-info"><p class="eyebrow">THREE AUDIO MODES</p><h2>Choose how NOVA sounds</h2><p><strong>Full audio</strong> includes looping ambient music, button-click effects and star narration</p><p><strong>Voice only</strong> keeps ElevenLabs or browser narration but turns off music and click sounds</p><p><strong>Audio off</strong> mutes all NOVA audio</p><p>Use the audio control in the Explore page navigation to switch between modes  Music plays continuously while you stay on the Explore page and have Full audio selected</p></section>
+ <section class="guide-info"><p class="eyebrow">THREE AUDIO MODES</p><h2>Choose how NOVA sounds</h2><p><strong>Full audio</strong> includes looping ambient music, button-click effects and star narration</p><p><strong>Voice only</strong> keeps ElevenLabs or browser narration but turns off music and click sounds</p><p><strong>Audio off</strong> mutes all NOVA audio</p><p>Use the audio button at the top of any page to switch modes  Full audio plays music on every page and Voice only keeps just narration  Some browsers may wait for your first click before starting music after you switch pages</p></section>
+ <!-- easy way to check if the actual mp3 files load -->
+ <section class="guide-info">
+   <p class="eyebrow">CHECK YOUR SOUND</p>
+   <h2>Test the audio</h2>
+   <p>This plays your click sound and starts the ambient music so you can check both files without opening the developer console</p>
+   <button id="novaTestSound" class="primary-btn" type="button">Test the sounds</button>
+   <p id="novaTestStatus" class="muted" role="status">The test uses your MP3 files in static/sounds</p>
+ </section>
  <section class="guide-info"><p class="eyebrow">WHAT LIVE MEANS</p><h2>A calculated view of the sky</h2><p>NOVA uses catalog positions and astronomy calculations to show where stars and planets should be for your location and time  Live mode refreshes every 30 seconds while the Explore page is open</p><p>Constellation outlines are patterns of connections between stars  Their shape moves across your sky because their stars are recalculated, not because the connections themselves change</p></section>
  <div class="guide-buttons"><a class="primary-btn" href="{{ url_for('explore') }}">Explore the sky ↗</a><a class="secondary-btn" href="{{ url_for('ask_nova') }}">Ask NOVA ↗</a></div>
 </section>

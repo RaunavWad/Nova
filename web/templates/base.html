@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#080E1B">
-<title>{% block title %}NOVA — Explore beyond sight{% endblock %}</title>
+<title>{% block title %}NOVA Home{% endblock %}</title>
 <link rel="icon" type="image/png" href="{{ url_for('static',filename='images/NOVA Logo No BG.png') }}">
 <link rel="stylesheet" href="{{ url_for('static',filename='style.css') }}">
 {% block head %}{% endblock %}
@@ -13,29 +13,31 @@
 <a href="#main" class="skip">Skip to content</a>
 <header class="navbar">
   <a href="{{ url_for('home') }}" class="logo" aria-label="NOVA home">
-    <img src="{{ url_for('static',filename='images/NOVA Logo No BG.png') }}" alt="NOVA">nova
+    <img src="{{ url_for('static',filename='images/NOVA Logo No BG.png') }}" alt="NOVA">
   </a>
-  <nav class="site-nav" aria-label="Main navigation">
+  < nav class="site-nav" aria-label="Main navigation">
     <a href="{{ url_for('home') }}" {% if page=='home' %}aria-current="page"{% endif %}>Home</a>
     <a href="{{ url_for('explore') }}" {% if page=='explore' %}aria-current="page"{% endif %}>Explore sky</a>
     <a href="{{ url_for('ask_nova') }}" {% if page=='ask' %}aria-current="page"{% endif %}>Ask NOVA</a>
     <a href="{{ url_for('guide') }}" {% if page=='guide' %}aria-current="page"{% endif %}>How to listen</a>
   </nav>
-  {% if page=='explore' %}
-  <button id="audioToggle" class="audio-btn" type="button" aria-label="Audio off, select for full audio" title="Audio off, select for full audio"
+  <!-- audio button is in the main layout so its on every page -->
+  <button id="audioToggle" class="audio-btn" type="button"
+    aria-label="Audio off, select for full audio"
     data-on-src="{{ url_for('static',filename='images/audio.png') }}"
-    data-off-src="{{ url_for('static',filename='images/audio off.png') }}">
+    data-half-src="{{ url_for('static',filename='images/audioHalf.png') }}"
+    data-off-src="{{ url_for('static',filename='images/audio off.png') }}"
+    data-click-url="{{ url_for('static',filename='sounds/click_effect.mp3') }}"
+    data-ambient-url="{{ url_for('static',filename='sounds/ambient.mp3') }}">
     <img id="audioIcon" src="{{ url_for('static',filename='images/audio off.png') }}" alt="" aria-hidden="true">
     <span id="audioLabel">Audio off</span>
   </button>
-  {% else %}
-  <a class="nav-cta" href="{{ url_for('explore') }}">Explore sky ↗</a>
-  {% endif %}
 </header>
+<p id="audioProblem" class="audio-problem" role="status" hidden></p>
 <main id="main">{% block content %}{% endblock %}</main>
 <footer>
   <a class="logo" href="{{ url_for('home') }}" aria-label="NOVA home">
-    <img src="{{ url_for('static',filename='images/NOVA Logo No BG.png') }}" alt="NOVA">nova
+    <img src="{{ url_for('static',filename='images/NOVA Logo No BG.png') }}" alt="NOVA">
   </a>
   <p>The universe is for everyone</p>
   <nav class="footer-nav" aria-label="Footer navigation">
@@ -44,6 +46,7 @@
     <a href="{{ url_for('home') }}#about">Our mission</a>
   </nav>
 </footer>
+<script src="{{ url_for('static',filename='audio.js') }}"></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

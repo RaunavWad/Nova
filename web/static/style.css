@@ -178,9 +178,9 @@ input:focus-visible,select:focus-visible {
 
 .audio-btn[aria-pressed="true"] {
 
-  background:var(--card);
+  background:var(--cyan);
 
-  color:var(--cyan);
+  color:var(--card);
 
 }
 
@@ -1219,3 +1219,29 @@ footer .logo img { height:39px }
 .constellation-panel #clearCon {margin-top:15px}
 .audio-btn {min-width:156px}
 @media(max-width:650px) { .audio-btn {min-width:0} }
+
+
+/* the sound button is shared across all four pages */
+.audio-btn {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  min-width:145px;
+  white-space:nowrap;
+}
+.audio-btn img {width:24px;height:24px;object-fit:contain}
+.audio-btn[aria-pressed="false"] {background:var(--card);color:var(--gray);border-color:var(--border)}
+.audio-btn:focus-visible {outline:3px solid var(--violet);outline-offset:3px}
+.audio-problem {
+  background:#311d31;
+  color:#F4F7FF;
+  border-bottom:1px solid #B7A4FF;
+  margin:0;
+  padding:10px 4%;
+  font-size:14px;
+}
+@media(max-width:650px) {
+  .audio-btn {min-width:0;padding:10px 12px}
+  .audio-btn img {width:21px;height:21px}
+}

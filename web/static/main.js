@@ -14,50 +14,18 @@ const cities = {
 let coords = cities.robbinsville;
 let everything = [], lines = [], constellationNames = {};
 let focusedCon = null, showConLines = true, showConNames = true;
-let chosen = null, mode = 'sky', audioMode = 'off', live = true;
+let chosen = null, mode = 'sky', live = true;
 let storyCache = {}, storyTimer, requestNum = 0;
 let mapSpots = [];
 let voiceAvailable = false, currentAudio = null, audioUrl = null;
 let talkingRequest = null, speechRun = 0;
 let tour = [], tourStep = 0;
 
-// sounds stay on the explorer page, never send audio files to the AI
-const ambientTrack = new Audio('/static/sound/ambient.mp3');
-ambientTrack.loop = true;
-ambientTrack.volume = .17;
+// the same audio controls are used on home, sky, ask and guide now
+const novaAudio = window.novaAudio;
 
-const clickTrack = new Audio('/static/sound/click_effect.mp3');
-clickTrack.volume = .45;
-
-function narrationOn() { return audioMode !== 'off' }
-
-function soundClick() {
-  if(audioMode !== 'full')return;
-  try { clickTrack.currentTime=0; clickTrack.play().catch(()=>{}) } catch(e) {}
-}
-
-// any ordinary button / link click gets the little sound
-// but only in FULL audio, not the speech-only mode
-document.addEventListener('click',e=>{
-  if(e.target.closest('button,a')) soundClick();
-},true);
-
-function setAudioMode(next) {
-  audioMode=next;
-  if(next === 'full') {
-    ambientTrack.play().catch(()=>{
-      if(audioMode==='full')el('skyStatus').textContent='Music could not start  Check static/sound/ambient.mp3';
-    });
-  } else {
-    ambientTrack.pause();
-    ambientTrack.currentTime=0;
-  }
-  if(next==='off') {
-    clearTimeout(storyTimer);
-    stop();
-  }
-  updateAudioButton();
-}
+function narrationOn() { return novaAudio.canSpeak(); }
+function soundClick() { novaAudio.playClick(); }
 
 function dateNow() {
   let d = new Date(), pad=n=>String(n).padStart(2,'0');
@@ -69,7 +37,7 @@ function compass(a) {
   return ['north','northeast','east','southeast','south','southwest','west','northwest'][Math.round(a/45)%8];
 }
 
-// fetch the actual sky from flask
+// get the sky data from python
 async function loadSky() {
   if(live) dateNow();
   let t = new Date(el('skyDate').value);
@@ -95,7 +63,7 @@ async function loadSky() {
       : 'Night sky positions are ready';
     if(el('skyStatus').textContent!==skyMessage && !el('skyStatus').textContent.startsWith('Selected ')) el('skyStatus').textContent=skyMessage;
 
-    // don't auto-select anything after clearing the map
+    // keep the map unselected if the user cleared it
     if(chosen && !everything.some(x=>x.id===chosen)) chosen=null;
 
     updateConstellations(); showList(); info(); drawMap();
@@ -124,7 +92,7 @@ function showList() {
   let hadFocus=box.contains(document.activeElement) ? document.activeElement?.dataset?.id : null;
   box.innerHTML='';
 
-  // don't make a screen reader tab through thousands of buttons
+  // don't make the user tab through thousands of star buttons
   results.slice(0,100).forEach(o=>{
     let b = document.createElement('button');
     b.type='button';
@@ -180,7 +148,7 @@ function info() {
   });
 }
 
-// quick local fallback when no ElevenLabs key or voice API fails
+// browser voice backup if elevenlabs isn't ready
 function browserVoice(t) {
   if(!('speechSynthesis' in window)) {
     el('skyStatus').textContent='This browser cannot play speech'; return
@@ -188,15 +156,16 @@ function browserVoice(t) {
   speechSynthesis.cancel();
   let v=new SpeechSynthesisUtterance(t);
   v.rate=.9;
-  v.onend=()=>ambientTrack.volume=.17;
+  v.onend=()=>novaAudio.duck(false);
+  v.onerror=()=>novaAudio.duck(false);
   speechSynthesis.speak(v);
 }
 
-// play an actual ElevenLabs mp3 from flask
+// get elevenlabs audio from flask
 async function say(t,id=null) {
   if(!narrationOn())return;
   stop();
-  if(audioMode==='full') ambientTrack.volume=.08;
+  if(novaAudio.getMode()==='full') novaAudio.duck(true);
   let myTurn=speechRun;
 
   if(!id || !voiceAvailable) {browserVoice(t);return}
@@ -216,7 +185,7 @@ async function say(t,id=null) {
     currentAudio=new Audio(audioUrl);
     let clip=currentAudio, url=audioUrl;
     currentAudio.onended=()=>{
-      ambientTrack.volume=.17;
+      novaAudio.duck(false);
       if(currentAudio===clip)currentAudio=null;
       URL.revokeObjectURL(url);
       if(audioUrl===url)audioUrl=null;
@@ -237,10 +206,10 @@ function stop() {
   if(currentAudio){currentAudio.pause();currentAudio=null}
   if(audioUrl){URL.revokeObjectURL(audioUrl);audioUrl=null}
   if('speechSynthesis' in window)speechSynthesis.cancel();
-  ambientTrack.volume=.17;
+  novaAudio.duck(false);
 }
 
-// selecting with mouse or arrow keys
+// same function for mouse and keyboard
 function select(id, tell=false, fromTour=false) {
   if(!fromTour && tour.length) finishTour();
   chosen = id;
@@ -252,7 +221,7 @@ function select(id, tell=false, fromTour=false) {
   el('skyStatus').textContent = `Selected ${obj.name}`;
 
   stop();
-  // wait a bit before asking AI and voice so arrow keys don't burn credits
+  // wait before sending a request so arrow keys don't waste voice credits
   storyTimer=setTimeout(()=>getStory(id,tell && narrationOn()),850);
 }
 
@@ -283,7 +252,7 @@ function spot(o) {
           y:canvas.height/2-Math.cos(angle)*r};
 }
 
-// a line pattern is fixed but its STARS move with location and time
+// the lines stay connected to the same stars, their position moves
 // pull the positions from /api/sky again every 30 seconds
 function liveGroups() {
   let byId = new Map(everything.map(o=>[o.id,o]));
@@ -363,6 +332,7 @@ function updateConstellations() {
   }
 }
 
+// the map moves when python gives us new star positions
 function drawMap() {
   let w=canvas.width,h=canvas.height,cx=w/2,cy=h/2,R=188;
   ctx.fillStyle='#0B1423';ctx.fillRect(0,0,w,h);
@@ -384,8 +354,8 @@ function drawMap() {
     mapSpots.push({...p,id:o.id});
   }
 
-  // crop constellation segments right at the horizon
-  // even if only one endpoint is up, the visible part is still drawn
+  // crop the lines at the edge of the sky circle
+  // even if one star is below the horizon
   if(showConLines) {
     ctx.save();
     ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.clip();
@@ -402,7 +372,7 @@ function drawMap() {
     ctx.restore();
   }
 
-  // star / planet dots
+  // the star and planet dots
   for(let o of everything) {
     let p=pos.get(o.id);
     if(!p||o.id===chosen)continue;
@@ -416,7 +386,7 @@ function drawMap() {
   }
   ctx.globalAlpha=1;
 
-  // show a few names, not 88 labels on top of each other
+  // too many names would overlap
   if(showConNames) {
     let visibleNames=liveGroups().filter(g=>!focusedCon || g.id===focusedCon);
     for(let group of visibleNames.slice(0,focusedCon?1:9)) {
@@ -434,7 +404,7 @@ function drawMap() {
   ctx.fillText('N',cx,cy-R-12);ctx.fillText('S',cx,cy+R+21);
   ctx.fillText('E',cx+R+18,cy+4);ctx.fillText('W',cx-R-18,cy+4);
 
-  // selected star is huge so you can actually see it
+  // make the chosen star really easy to see
   let picked=everything.find(o=>o.id===chosen);
   let p=pos.get(chosen);
   if(picked&&p) {
@@ -471,7 +441,7 @@ canvas.addEventListener('click',e=>{
   else clearSelections(); // click outside a star or constellation to reset
 });
 
-// little hand cursor when the mouse is near a star
+// show a hand cursor if you're near a star
 canvas.addEventListener('mousemove',e=>{
   let r=canvas.getBoundingClientRect();
   let x=(e.clientX-r.left)*canvas.width/r.width;
@@ -485,7 +455,7 @@ canvas.addEventListener('keydown',e=>{
   e.preventDefault();
   if(e.key==='Escape') { clearSelections();return }
   if(e.key==='Enter'||e.key===' ') {
-    if(audioMode==='off')setAudioMode('voice');
+    if(novaAudio.getMode()==='off') { el('skyStatus').textContent='Audio is off  Use the audio button above to turn on narration'; return; }
     if(chosen)getStory(chosen,true);return;
   }
   if(!mapSpots.length) return;
@@ -499,7 +469,10 @@ canvas.addEventListener('keydown',e=>{
     return {...p,score:front>1?Math.hypot(x,y)+Math.abs(x*dy-y*dx)*1.5:1e9};
   }).sort((a,b)=>a.score-b.score)[0];
 
-  if(next && next.score<1e9) select(next.id,true);
+  if(next && next.score<1e9) {
+    soundClick();
+    select(next.id,true);
+  }
 });
 
 // keyboard in button list
@@ -512,25 +485,16 @@ el('starList').addEventListener('keydown',e=>{
   let next=bs[(i+step+bs.length)%bs.length];next.focus();next.click();
 });
 
-// 3 stages = full sounds, voice only, or silence
-function updateAudioButton() {
-  const btn=el('audioToggle');
-  const labels={off:'Audio off',full:'Full audio',voice:'Voice only'};
-  const next={off:'full',full:'voice',voice:'off'}[audioMode];
-  el('audioIcon').src=audioMode==='off'?btn.dataset.offSrc:btn.dataset.onSrc;
-  el('audioLabel').textContent=labels[audioMode];
-  btn.setAttribute('aria-label',`${labels[audioMode]}  Select for ${labels[next]}`);
-  btn.title=`${labels[audioMode]}  Click for ${labels[next]}`;
-}
-
-el('audioToggle').addEventListener('click',()=>{
-  const next={off:'full',full:'voice',voice:'off'}[audioMode];
-  setAudioMode(next);
-  if(next==='full')soundClick(); // first click turns sound on
+// if the user mutes NOVA, stop any star narration in progress
+document.addEventListener('nova:modechange', e => {
+  if(e.detail.mode === 'off') {
+    clearTimeout(storyTimer);
+    stop();
+  }
 });
 
 el('playBtn').addEventListener('click',()=>{
-  if(audioMode==='off')setAudioMode('voice');
+  if(novaAudio.getMode()==='off') { el('skyStatus').textContent='Audio is off  Use the audio button above to turn on narration'; return; }
   if(chosen)getStory(chosen,true);
 });
 el('stopBtn').addEventListener('click',()=>{
@@ -565,7 +529,7 @@ el('locateBtn').addEventListener('click',()=>{
   },()=>el('skyStatus').textContent='Could not get location');
 });
 
-// map is now visible all the time on Explore
+// show the map on the explore page
 el('showLines').addEventListener('change',e=>{showConLines=e.target.checked;drawMap()});
 el('showLabels').addEventListener('change',e=>{showConNames=e.target.checked;drawMap()});
 el('clearCon').addEventListener('click',clearSelections);
@@ -595,8 +559,7 @@ el('startConTour').addEventListener('click',()=>{
     finishTour();return;
   }
   tourStep=0;
-  // starting an audio tour explicitly turns narration on, even if muted before
-  if(audioMode==='off')setAudioMode('voice');
+  // tour still works as text if sound is off
   el('tourPlayer').hidden=false;
   showTour();
   el('tourPlayer').scrollIntoView({block:'nearest',behavior:'smooth'});
@@ -609,7 +572,7 @@ el('prevTour').addEventListener('click',()=>{
 });
 el('repeatTour').addEventListener('click',()=>{
   if(!chosen)return;
-  if(audioMode==='off')setAudioMode('voice');
+  if(novaAudio.getMode()==='off') { el('skyStatus').textContent='Audio is off  Use the audio button above to turn on narration'; return; }
   getStory(chosen,true);
 });
 el('endTour').addEventListener('click',()=>{
@@ -618,7 +581,7 @@ el('endTour').addEventListener('click',()=>{
   el('skyStatus').textContent='Guided tour ended';
 });
 
-// find out which services you actually connected
+// see if elevenlabs is set up
 fetch('/api/services').then(r=>r.json()).then(d=>{
   voiceAvailable=d.elevenlabs;
   console.log('NOVA services', d);

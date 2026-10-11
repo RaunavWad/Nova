@@ -16,6 +16,7 @@
   let requestController = null, audioPlayer = null, audioUrl = null;
   let lastAnswer = '', speechToken = '', conversationToken = '', turn = 0;
 
+  const sound = window.novaAudio;
   const sayStatus = t => status.textContent = t;
 
   function stopAnswer() {
@@ -25,6 +26,7 @@
     if(audioPlayer) {audioPlayer.pause();audioPlayer=null}
     if(audioUrl) {URL.revokeObjectURL(audioUrl);audioUrl=null}
     if('speechSynthesis' in window) speechSynthesis.cancel();
+    sound.duck(false);
   }
 
   function stopMicTracks() {
@@ -32,6 +34,7 @@
     micStream=null;
     if(recTimer) clearTimeout(recTimer);
     recTimer=null;
+    sound.duck(false);
   }
 
   function buttonsForRecording(on) {
@@ -63,6 +66,7 @@
 
   // browser speech only if elevenlabs voice fails
   function backupVoice(t) {
+    if(!sound.canSpeak()) return;
     if(!('speechSynthesis' in window)) {
       sayStatus('Answer ready as text but audio is unavailable');
       return;
@@ -70,12 +74,19 @@
     speechSynthesis.cancel();
     let s = new SpeechSynthesisUtterance(t);
     s.rate=.93;
+    s.onend = () => sound.duck(false);
+    s.onerror = () => sound.duck(false);
+    sound.duck(true);
     speechSynthesis.speak(s);
   }
 
   async function playAnswer(text, token, mine) {
     // do not change the run number here or we'll cancel our own request
     if(mine!==turn) return;
+    if(!sound.canSpeak()) {
+      sayStatus('Answer ready as text  Turn on audio above to hear it');
+      return;
+    }
 
     requestController = new AbortController();
     sayStatus('Making the ElevenLabs voice');
@@ -91,12 +102,14 @@
         throw Error(error.error || 'Voice was unavailable');
       }
       let blob = await res.blob();
-      if(mine!==turn) return;
+      if(mine!==turn || !sound.canSpeak()) return;
 
       audioUrl=URL.createObjectURL(blob);
       let url=audioUrl;
       audioPlayer=new Audio(url);
+      sound.duck(true);
       audioPlayer.onended=()=>{
+        sound.duck(false);
         if(audioPlayer)audioPlayer=null;
         URL.revokeObjectURL(url);
         if(audioUrl===url)audioUrl=null;
@@ -106,6 +119,7 @@
       if(mine===turn) sayStatus('NOVA is speaking');
     } catch(e) {
       if(mine!==turn || e.name==='AbortError') return;
+      sound.duck(false);
       console.log('NOVA audio fallback',e.message);
       sayStatus('ElevenLabs voice unavailable, using browser speech');
       backupVoice(text);
@@ -114,6 +128,7 @@
     }
   }
 
+  // typed and spoken questions both end up going through here
   async function askQuestion(text) {
     text = text.trim();
     if(!text) { sayStatus('Type or say a question first'); return }
@@ -184,6 +199,7 @@
     }
   }
 
+  // only turn the mic on after someone presses Start speaking
   async function startRecording() {
     if(!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
       sayStatus('This browser cannot record audio, type your question instead');
@@ -204,6 +220,7 @@
         stream.getTracks().forEach(t=>t.stop());return;
       }
       micStream=stream;
+      sound.duck(true); // less music getting into the microphone
 
       let types=['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/ogg;codecs=opus'];
       let supported=types.find(type=>MediaRecorder.isTypeSupported(type));
@@ -264,6 +281,14 @@
     stopAnswer();
     find('stopBtn')?.click();
     playAnswer(lastAnswer,speechToken,turn);
+  });
+
+  // mute immediately stops responses even if we're still waiting for ElevenLabs
+  document.addEventListener('nova:modechange', e => {
+    if(e.detail.mode === 'off') {
+      stopAnswer();
+      sayStatus('Audio is off  You can still read the answer');
+    }
   });
 
   form.addEventListener('submit',e=>{
