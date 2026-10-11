@@ -8,7 +8,6 @@
 import Foundation
 import Combine
 
-// MARK: - Settings
 
 enum Verbosity: String, Codable, CaseIterable, Identifiable {
     case minimal, normal, detailed
@@ -49,25 +48,26 @@ struct AppSettings: Codable, Equatable {
     var speechRate: Float = 0.5
     var verbosity: Verbosity = .normal
     var useVoiceOverAnnouncements = true
-    var premiumVoice = true                      // ElevenLabs narration when configured; built-in voice otherwise
+    var premiumVoice = true
     var guidanceStyle: GuidanceStyle = .hapticsAndSpeech
-    var guidanceSpeechInterval: Double = 8       // seconds between spoken guidance updates
+    var guidanceSpeechInterval: Double = 8
     var hapticsEnabled = true
-    var hapticIntensity: Double = 0.8            // honoured only on devices with Core Haptics
+    var hapticIntensity: Double = 0.8
     var narrationVolume: Double = 1.0
     var ambienceEnabled = false
     var ambienceVolume: Double = 0.35
     var effectsEnabled = true
     var effectsVolume: Double = 0.7
     var guidanceTone = true
-    var spatialAudio = true                      // needs headphones to be meaningful
+    var spatialAudio = true
     var pointingMode: PointingMode = .backOfPhone
-    var demoMode = false                         // simulated pointing and a fixed demo location
+    var demoMode = false
     var hasHeardIntro = false
-    var azimuthOffset: Double = 0                // user calibration against a known direction
+    var azimuthOffset: Double = 0
+    var greetingEnabled: Bool? = nil
+    var speaksGreeting: Bool { greetingEnabled ?? true }
 }
 
-// MARK: - Progress
 
 enum DiscoveryMethod: String, Codable { case found, identified }
 
@@ -81,16 +81,15 @@ struct DiscoveryRecord: Codable, Identifiable, Equatable {
 
 struct UserProgress: Codable, Equatable {
     var discoveries: [DiscoveryRecord] = []
-    var learned: Set<String> = []          // objects whose deeper description was heard
-    var storiesHeard: Set<String> = []     // objects whose story was heard
-    var usageDays: Set<String> = []        // yyyy-MM-dd; counts days the app was used, not hours or location
-    var unlocked: [String: Date] = [:]     // achievement id -> date
-    var dailyDone: Set<String> = []        // yyyy-MM-dd of completed optional daily suggestions
+    var learned: Set<String> = []
+    var storiesHeard: Set<String> = []
+    var usageDays: Set<String> = []
+    var unlocked: [String: Date] = [:]
+    var dailyDone: Set<String> = []
 
     var discoveredIDs: Set<String> { Set(discoveries.map(\.objectID)) }
 }
 
-// MARK: - Persistence (local JSON; no account, no network)
 
 @MainActor
 final class PersistenceManager: ObservableObject {
@@ -127,7 +126,6 @@ final class PersistenceManager: ObservableObject {
 
     func markUsedToday() { progress.usageDays.insert(Self.dayKey()) }
 
-    /// Returns true if this is a new discovery.
     @discardableResult
     func recordDiscovery(_ objectID: String, method: DiscoveryMethod) -> Bool {
         let isNew = !progress.discoveredIDs.contains(objectID)
