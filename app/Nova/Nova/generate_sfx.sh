@@ -1,9 +1,4 @@
-#!/bin/bash
-# Generates Nova's sound effects with the ElevenLabs Sound Effects API and saves them in Resources/Sounds.
-# Run once on your Mac, then commit the .mp3 files. The app needs no key to PLAY them.
-#   export ELEVENLABS_API_KEY="your key"      (keep it out of git and out of shell history files if you can)
-#   bash generate_sfx.sh
-# Re-run a single effect by deleting its file first. Listen to each one; regenerate any you don't like.
+
 set -euo pipefail
 : "${ELEVENLABS_API_KEY:?Set ELEVENLABS_API_KEY first (export ELEVENLABS_API_KEY=...)}"
 OUT="$(cd "$(dirname "$0")" && pwd)/Sounds"
@@ -19,7 +14,6 @@ gen() {  # name seconds prompt
     -H "xi-api-key: $ELEVENLABS_API_KEY" -H "Content-Type: application/json" -d "$body" -o "$file"
 }
 
-# File names must match the app's effect names exactly (sfx_<name>.mp3).
 gen star          1.5 "A single delicate crystal chime with a soft shimmering sparkle, gentle, magical and clean"
 gen planet        2.0 "A warm resonant synth bell with a slow gentle swell, calm, spacey and smooth"
 gen moon          2.5 "A deep soft hollow tone with a faint airy shimmer, serene, lunar and peaceful"
