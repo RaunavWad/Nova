@@ -1,7 +1,7 @@
 <div align="center">
   <img src="web/static/images/NOVA%20Logo%20With%20BG.png" alt="NOVA logo" width="110">
 
-  # NOVA - Astronomy Beyond Sight
+  # NOVA - The Universe Is For Everyone
 
   **Explore the universe through sound, voice guidance, and touch**
 
