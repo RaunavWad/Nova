@@ -28,21 +28,21 @@ NOVA has two parts: an interactive website and an iPhone app. They offer differe
 
 ### Website
 
-- **Live sky map** — shows calculated positions of stars, planets, and constellations for a location and time, with updates every 30 seconds in Live mode
-- **Constellation tours** — select a constellation from the sidebar to focus on it and take a guided tour of its visible stars
-- **Spoken descriptions** — hear information about stars and planets instead of relying only on the map
-- **Ask NOVA** — ask astronomy questions by typing or speaking, then get a written or spoken answer
-- **Accessible controls** — keyboard navigation, labels for screen readers, and instructions on the How to Listen page
-- **Three audio modes** — Full audio (music, effects, and narration), Voice only (narration), and Audio off
+- **Live sky map** - shows calculated positions of stars, planets, and constellations for a location and time, with updates every 30 seconds in Live mode
+- **Constellation tours** - select a constellation from the sidebar to focus on it and take a guided tour of its visible stars
+- **Spoken descriptions** - hear information about stars and planets instead of relying only on the map
+- **Ask NOVA** - ask astronomy questions by typing or speaking, then get a written or spoken answer
+- **Accessible controls** - keyboard navigation, labels for screen readers, and instructions on the How to Listen page
+- **Three audio modes** - Full audio (music, effects, and narration), Voice only (narration), and Audio off
 
 ### iPhone app
 
-- **Find an object** — choose a star or planet and follow spoken and haptic directions to point toward it
-- **Identify the sky** — aim your phone and find out which astronomical object you may be pointing at
-- **Explore tonight** — hear about objects above the horizon based on your location
-- **Sky camera** — a camera-based view with sky labels for sighted helpers
-- **Discoveries and missions** — save what you've found, complete optional goals, and earn achievements
-- **Customizable accessibility settings** — adjust narration, vibrations, guidance sounds, and other preferences
+- **Find an object** - choose a star or planet and follow spoken and haptic directions to point toward it
+- **Identify the sky** - aim your phone and find out which astronomical object you may be pointing at
+- **Explore tonight** - hear about objects above the horizon based on your location
+- **Sky camera** - a camera-based view with sky labels for sighted helpers
+- **Discoveries and missions** - save what you've found, complete optional goals, and earn achievements
+- **Customizable accessibility settings** - adjust narration, vibrations, guidance sounds, and other preferences
 
 The app uses the phone's location and motion sensors to estimate its direction. Accuracy can vary with compass calibration and your surroundings.
 
@@ -61,7 +61,11 @@ The app uses the phone's location and motion sensors to estimate its direction. 
 | Python, Flask | Swift, SwiftUI |
 | HTML, CSS, JavaScript | Core Location and device motion |
 | Skyfield, NumPy | AVFoundation and haptics |
+<<<<<<< HEAD
 | HYG star catalog, Stellarium constellation data, Yale Bright Star Catalog, JPL ephemeris | On-device astronomy calculations |
+=======
+| HYG star catalog, Stellarium constellation data, Yale Bright Star Catolog, JPL ephemeris | On-device astronomy calculations |
+>>>>>>> 6c2725bb5da0f3010d17dd3a05114a3605f7902c
 | OpenRouter, ElevenLabs | OpenRouter, ElevenLabs, Google sign-in |
 
 ## Run the website locally
