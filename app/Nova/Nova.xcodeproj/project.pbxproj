@@ -283,6 +283,7 @@
 				INFOPLIST_FILE = Nova/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Nova shows the live camera so it can label where stars and planets are. Pictures are never saved.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Nova uses your location to work out where the stars and planets are above you.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Nova uses your microphone for the chatbot to work.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -318,11 +319,12 @@
 				INFOPLIST_FILE = Nova/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Nova shows the live camera so it can label where stars and planets are. Pictures are never saved.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Nova uses your location to work out where the stars and planets are above you.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Nova uses your microphone for the chatbot to work.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
