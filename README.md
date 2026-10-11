@@ -1,12 +1,20 @@
 <div align="center">
-  <img src="web/static/images/NOVA%20Logo%20With%20BG.png" alt="NOVA logo" width="110">
+  <img src="web/static/images/NOVA%20Logo%20No%20BG.png" alt="NOVA logo" width="110">
 
-  # NOVA — Astronomy Beyond Sight
+  # NOVA - The Universe Is For Everyone
 
   **Explore the universe through sound, voice guidance, and touch**
 
-  A project built for **HackPHS 2026 — Into the Sky**
+  A project built for **HackPHS 2026 - Into the Skies**
 </div>
+
+## Visit NOVA online
+
+We're planning to launch NOVA on our own website so anyone can explore the sky from their browser.
+
+**Website:** `https://YOUR-DOMAIN-HERE` **(Coming soon)**
+
+We'll replace this placeholder with our real domain when NOVA goes live.
 
 ## Why we built NOVA
 
@@ -53,8 +61,8 @@ The app uses the phone's location and motion sensors to estimate its direction. 
 | Python, Flask | Swift, SwiftUI |
 | HTML, CSS, JavaScript | Core Location and device motion |
 | Skyfield, NumPy | AVFoundation and haptics |
-| HYG star catalog, Stellarium constellation data, JPL ephemeris | On-device astronomy calculations |
-| OpenRouter and ElevenLabs | Optional ElevenLabs narration and Google sign-in |
+| HYG star catalog, Stellarium constellation data, Yale Bright Star Catalog, JPL ephemeris | On-device astronomy calculations |
+| OpenRouter, ElevenLabs | OpenRouter, ElevenLabs, Google sign-in |
 
 ## Run the website locally
 
@@ -162,6 +170,7 @@ NOVA/
 Thanks to the projects and services that make NOVA possible:
 
 - [Skyfield](https://rhodesmill.org/skyfield/) for astronomical position calculations
+- [Yale Bright Star Data](http://tdc-www.harvard.edu/catalogs/bsc5.html) for star catalog data on mobile
 - [HYG Database](https://github.com/astronexus/HYG-Database) for star catalog data
 - [Stellarium Sky Cultures](https://github.com/Stellarium/stellarium-skycultures) for constellation connections
 - [NASA/JPL ephemerides](https://ssd.jpl.nasa.gov/planets/eph_export.html) for solar system positions
