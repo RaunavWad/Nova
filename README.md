@@ -54,7 +54,7 @@ The app uses the phone's location and motion sensors to estimate its direction. 
 | HTML, CSS, JavaScript | Core Location and device motion |
 | Skyfield, NumPy | AVFoundation and haptics |
 | HYG star catalog, Stellarium constellation data, Yale Bright Star Catolog, JPL ephemeris | On-device astronomy calculations |
-| OpenRouter, ElevenLabs, Google sign-in |
+| OpenRouter, ElevenLabs | OpenRouter, ElevenLabs, Google sign-in |
 
 ## Run the website locally
 
