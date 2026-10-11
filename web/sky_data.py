@@ -1,168 +1,208 @@
-# nova sky data stuff
-# star catalog + planets all get worked out here
+"""Loads the astronomy data and works out what's in the sky."""
 
-import csv, json
+import csv
+import json
+from functools import lru_cache
 from pathlib import Path
 from urllib.request import urlretrieve
-from functools import lru_cache
 
 import numpy as np
-from skyfield.api import Loader, Star, wgs84, load_constellation_names
+from skyfield.api import Loader, Star, load_constellation_names, wgs84
 
-folder = Path(__file__).parent / 'data'
-folder.mkdir(exist_ok=True)
-load = Loader(str(folder))
+DATA_FOLDER = Path(__file__).parent / 'data'
+DATA_FOLDER.mkdir(exist_ok=True)
+load = Loader(str(DATA_FOLDER))
 
-hyg_url = 'https://raw.githubusercontent.com/astronexus/HYG-Database/main/hyg/CURRENT/hygdata_v41.csv'
-lines_url = 'https://raw.githubusercontent.com/Stellarium/stellarium-skycultures/master/western/index.json'
+HYG_URL = 'https://raw.githubusercontent.com/astronexus/HYG-Database/main/hyg/CURRENT/hygdata_v41.csv'
+LINES_URL = 'https://raw.githubusercontent.com/Stellarium/stellarium-skycultures/master/western/index.json'
 
+# Skyfield needs these names to find the planets in the JPL data file.
 planets = {
-    'Mercury':'mercury', 'Venus':'venus', 'Mars':'mars',
-    'Jupiter':'jupiter barycenter', 'Saturn':'saturn barycenter',
-    'Uranus':'uranus barycenter', 'Neptune':'neptune barycenter',
-    'Moon':'moon'
+    'Mercury': 'mercury',
+    'Venus': 'venus',
+    'Mars': 'mars',
+    'Jupiter': 'jupiter barycenter',
+    'Saturn': 'saturn barycenter',
+    'Uranus': 'uranus barycenter',
+    'Neptune': 'neptune barycenter',
+    'Moon': 'moon'
 }
 
 
 def get_file(name, url):
-    path = folder / name
+    """Download a data file the first time NOVA needs it."""
+    path = DATA_FOLDER / name
     if not path.exists():
-        print('getting', name, '- first run only')
-        tmp = path.with_suffix(path.suffix + '.part')
-        urlretrieve(url, tmp)
-        tmp.replace(path)
+        print('Downloading', name, '(first run only)')
+        temp_path = path.with_suffix(path.suffix + '.part')
+        urlretrieve(url, temp_path)
+        temp_path.replace(path)
     return path
 
 
 @lru_cache(maxsize=1)
 def setup():
-    file1 = get_file('hygdata_v41.csv', hyg_url)
-    file2 = get_file('constellations.json', lines_url)
+    """Load stars and constellation lines once so the map can refresh quickly."""
+    star_file = get_file('hygdata_v41.csv', HYG_URL)
+    line_file = get_file('constellations.json', LINES_URL)
 
-    with open(file2,encoding='utf8') as f:
-        const = json.load(f)['constellations']
+    with open(line_file, encoding='utf8') as file:
+        constellations = json.load(file)['constellations']
 
     lines = []
-    needed = set()
-    for c in const:
-        short = c['id'].split()[-1]
-        for chain in c.get('lines',[]):
-            # some Stellarium chains begin with 'thin' or 'bold'
-            hips = [int(n) for n in chain if isinstance(n,int) or (isinstance(n,str) and n.isdigit())]
-            for x,y in zip(hips, hips[1:]):
-                needed.add(x); needed.add(y)
-                lines.append([f'hip-{x}',f'hip-{y}',short])
+    needed_stars = set()
+    for constellation in constellations:
+        short_name = constellation['id'].split()[-1]
+        for chain in constellation.get('lines', []):
+            # Some Stellarium chains start with a style like "thin" or "bold".
+            hip_numbers = [
+                int(number) for number in chain
+                if isinstance(number, int) or (isinstance(number, str) and number.isdigit())
+            ]
+            for first, second in zip(hip_numbers, hip_numbers[1:]):
+                needed_stars.add(first)
+                needed_stars.add(second)
+                lines.append([f'hip-{first}', f'hip-{second}', short_name])
 
-    const_names = dict(load_constellation_names())
-    objects = []
-    with open(file1,encoding='utf8',newline='') as f:
-        for row in csv.DictReader(f):
+    constellation_names = dict(load_constellation_names())
+    stars = []
+    with open(star_file, encoding='utf8', newline='') as file:
+        for row in csv.DictReader(file):
             try:
-                mag = float(row['mag'])
-                ra = float(row['ra'])     # hyg RA is hours
+                magnitude = float(row['mag'])
+                ra = float(row['ra'])  # HYG stores right ascension in hours.
                 dec = float(row['dec'])
-            except (TypeError,ValueError,KeyError):
+            except (TypeError, ValueError, KeyError):
                 continue
 
-            hip = row.get('hip','').strip()
-            hip_num = int(hip) if hip.isdigit() else None
-            if mag > 5.5 and hip_num not in needed: continue
+            hip = row.get('hip', '').strip()
+            hip_number = int(hip) if hip.isdigit() else None
+            if magnitude > 5.5 and hip_number not in needed_stars:
+                continue
 
-            proper = row.get('proper','').strip()
-            fallback = row.get('bf','').strip()
-            name = proper or fallback or ('HIP '+hip if hip else 'HYG '+row['id'])
-            dist = None
+            proper_name = row.get('proper', '').strip()
+            fallback_name = row.get('bf', '').strip()
+            name = proper_name or fallback_name or ('HIP ' + hip if hip else 'HYG ' + row['id'])
+
+            distance = None
             try:
-                pc = float(row['dist'])
-                if 0 < pc < 100000: dist = round(pc * 3.26156,1)
-            except (TypeError,ValueError): pass
+                parsecs = float(row['dist'])
+                if 0 < parsecs < 100000:
+                    distance = round(parsecs * 3.26156, 1)
+            except (TypeError, ValueError):
+                pass
 
-            short = row.get('con','').strip()
-            objects.append({
-                'id': f'hip-{hip}' if hip else 'hyg-'+row['id'],
-                'type':'star','name':name,'mag':round(mag,2),
-                'constellation':const_names.get(short,short or 'Unknown'),
-                'dist_ly':dist,'spect':row.get('spect','').strip(),'ra':ra,'dec':dec
+            short_name = row.get('con', '').strip()
+            stars.append({
+                'id': f'hip-{hip}' if hip else 'hyg-' + row['id'],
+                'type': 'star',
+                'name': name,
+                'mag': round(magnitude, 2),
+                'constellation': constellation_names.get(short_name, short_name or 'Unknown'),
+                'dist_ly': distance,
+                'spect': row.get('spect', '').strip(),
+                'ra': ra,
+                'dec': dec
             })
 
-    lookup = {s['id']:s for s in objects}
-    lines = [pair for pair in lines if pair[0] in lookup and pair[1] in lookup]
+    lookup = {star['id']: star for star in stars}
+    lines = [edge for edge in lines if edge[0] in lookup and edge[1] in lookup]
 
+    # Skyfield can calculate all the star positions in one batch.
     star_vectors = Star(
-        ra_hours=np.array([s['ra'] for s in objects]),
-        dec_degrees=np.array([s['dec'] for s in objects])
+        ra_hours=np.array([star['ra'] for star in stars]),
+        dec_degrees=np.array([star['dec'] for star in stars])
     )
 
     timescale = load.timescale()
-    eph = load('de421.bsp') # NASA JPL positions, saved locally
-    return objects, lookup, lines, star_vectors, timescale, eph
+    ephemeris = load('de421.bsp')  # JPL planet positions, saved locally.
+    return stars, lookup, lines, star_vectors, timescale, ephemeris
 
 
 def fact_for(item):
-    if item['type']=='planet':
+    """A short description we can use even if the AI service is down."""
+    if item['type'] == 'planet':
         planet_info = {
-            'Mercury':'Mercury is the closest planet to the Sun, with a rocky cratered surface',
-            'Venus':'Venus is a rocky planet with a thick atmosphere and extreme surface temperatures',
-            'Mars':'Mars is a rocky planet known for its iron oxide rich surface and polar ice caps',
-            'Jupiter':'Jupiter is the largest planet in the solar system and has a giant storm called the Great Red Spot',
-            'Saturn':'Saturn is a gas giant surrounded by broad rings made mostly of icy particles',
-            'Uranus':'Uranus is an ice giant that rotates on an unusually tilted axis',
-            'Neptune':'Neptune is a distant ice giant with powerful winds',
-            'Moon':'The Moon is Earth’s natural satellite and its changing phases come from the Sun illuminating different portions of its surface'
+            'Mercury': 'Mercury is the closest planet to the Sun, with a rocky cratered surface',
+            'Venus': 'Venus is a rocky planet with a thick atmosphere and extreme surface temperatures',
+            'Mars': 'Mars is a rocky planet known for its iron oxide rich surface and polar ice caps',
+            'Jupiter': 'Jupiter is the largest planet in the solar system and has a giant storm called the Great Red Spot',
+            'Saturn': 'Saturn is a gas giant surrounded by broad rings made mostly of icy particles',
+            'Uranus': 'Uranus is an ice giant that rotates on an unusually tilted axis',
+            'Neptune': 'Neptune is a distant ice giant with powerful winds',
+            'Moon': 'The Moon is Earth’s natural satellite and its changing phases come from the Sun illuminating different portions of its surface'
         }
         return planet_info[item['name']]
-    bits = [f"{item['name']} is a star in {item['constellation']}"]
-    bits.append(f"Its apparent magnitude is {item['mag']}")
+
+    details = [f"{item['name']} is a star in {item['constellation']}"]
+    details.append(f"Its apparent magnitude is {item['mag']}")
     if item.get('spect'):
-        bits.append(f"Its recorded spectral type is {item['spect']}")
+        details.append(f"Its recorded spectral type is {item['spect']}")
     if item.get('dist_ly') is not None:
-        bits.append(f"It is about {item['dist_ly']} light years from Earth")
-    return ', '.join(bits)
+        details.append(f"It is about {item['dist_ly']} light years from Earth")
+    return ', '.join(details)
 
 
-def object_info(id):
-    items, lookup, lines, star_vectors, timescale, eph = setup()
-    if id.startswith('planet-'):
-        name = id[7:].capitalize()
-        if name not in planets: return None
-        return {'id':id,'name':name,'type':'planet'}
-    return lookup.get(id)
+def object_info(object_id):
+    """Find a known star or planet by its map ID."""
+    stars, lookup, lines, star_vectors, timescale, ephemeris = setup()
+    if object_id.startswith('planet-'):
+        name = object_id[7:].capitalize()
+        if name not in planets:
+            return None
+        return {'id': object_id, 'name': name, 'type': 'planet'}
+    return lookup.get(object_id)
 
 
 def get_sky(lat, lon, when):
-    objects, lookup, lines, star_vectors, ts, eph = setup()
-    t = ts.from_datetime(when)
-    observer = eph['earth'] + wgs84.latlon(lat,lon)
-    here = observer.at(t)
+    """Get the altitude and compass direction of all our stars and planets."""
+    stars, lookup, lines, star_vectors, timescale, ephemeris = setup()
+    time = timescale.from_datetime(when)
+    observer = ephemeris['earth'] + wgs84.latlon(lat, lon)
+    here = observer.at(time)
 
-    alt, az, _ = here.observe(star_vectors).apparent().altaz()
-    answer = []
-    for i,s in enumerate(objects):
-        answer.append({
-            'id':s['id'],'name':s['name'],'type':'star',
-            'mag':s['mag'],'constellation':s['constellation'],
-            'dist_ly':s['dist_ly'],
-            'alt':round(float(alt.degrees[i]),2),
-            'az':round(float(az.degrees[i]),2)
+    altitudes, azimuths, _ = here.observe(star_vectors).apparent().altaz()
+    objects = []
+    for index, star in enumerate(stars):
+        objects.append({
+            'id': star['id'],
+            'name': star['name'],
+            'type': 'star',
+            'mag': star['mag'],
+            'constellation': star['constellation'],
+            'dist_ly': star['dist_ly'],
+            'alt': round(float(altitudes.degrees[index]), 2),
+            'az': round(float(azimuths.degrees[index]), 2)
         })
 
     for name, key in planets.items():
-        a, z, d = here.observe(eph[key]).apparent().altaz()
-        answer.append({
-            'id':'planet-'+name.lower(),'name':name,'type':'planet',
-            'mag':None,'constellation':'Solar system','dist_ly':None,
-            'alt':round(float(a.degrees),2), 'az':round(float(z.degrees),2),
-            'distance_au':round(float(d.au),3)
+        altitude, azimuth, distance = here.observe(ephemeris[key]).apparent().altaz()
+        objects.append({
+            'id': 'planet-' + name.lower(),
+            'name': name,
+            'type': 'planet',
+            'mag': None,
+            'constellation': 'Solar system',
+            'dist_ly': None,
+            'alt': round(float(altitude.degrees), 2),
+            'az': round(float(azimuth.degrees), 2),
+            'distance_au': round(float(distance.au), 3)
         })
 
-    sun_alt = here.observe(eph['sun']).apparent().altaz()[0].degrees
+    sun_altitude = here.observe(ephemeris['sun']).apparent().altaz()[0].degrees
+    constellation_names = dict(load_constellation_names())
+
     return {
-        'objects':answer, 'lines':lines,
-        'constellations':[{'id':s,'name':dict(load_constellation_names()).get(s,s)} for s in sorted({e[2] for e in lines})],
-        'updated_at':when.isoformat(),
-        'daylight':bool(sun_alt > -0.833),
-        'above':sum(s['alt']>0 for s in answer),
-        'count':len(answer)
+        'objects': objects,
+        'lines': lines,
+        'constellations': [
+            {'id': code, 'name': constellation_names.get(code, code)}
+            for code in sorted({edge[2] for edge in lines})
+        ],
+        'updated_at': when.isoformat(),
+        'daylight': bool(sun_altitude > -0.833),
+        'above': sum(obj['alt'] > 0 for obj in objects),
+        'count': len(objects)
     }
 
 

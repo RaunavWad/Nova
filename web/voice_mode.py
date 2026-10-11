@@ -1,4 +1,4 @@
-# nova voice chat
+# Voice questions and answers for NOVA
 # elevenlabs hears the question, openrouter answers, then elevenlabs reads it back
 # keys stay in python, NOT the website js
 
@@ -146,9 +146,8 @@ def real_astronomy_answer(answer):
     return True
 
 
-# The old code asked a free model to approve EVERY question first
-# it kept giving safety labels instead of ALLOW or BLOCK
-# easy astronomy questions can be checked here without wasting another API call
+# We can recognize common space topics here instead of sending
+# every question to another model just to check the subject
 
 SPACE_WORDS = re.compile(r'''
 \b(?:

@@ -88,12 +88,11 @@ OPENROUTER_API_KEY=
 OPENROUTER_MODEL=openrouter/free
 NOVA_GUARD_MODEL=openrouter/free
 NOVA_SIGNING_KEY=
-OPENAI_API_KEY=
 ```
 
 - **OpenRouter** powers Ask NOVA's text responses
 - **ElevenLabs** is used for microphone transcription and spoken narration
-- **OpenAI** is optional for enhanced star and planet descriptions on the website
+- **OpenRouter** is also used for optional star and planet descriptions (with catalog facts as a fallback)
 - **NOVA_SIGNING_KEY** should be set to a long, random value before public deployment
 
 The sky map can run without AI keys, but voice and AI features need their respective services configured. Model availability can change on OpenRouter.

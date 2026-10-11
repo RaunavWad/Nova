@@ -1,4 +1,4 @@
-// Sounds and page switching for NOVA
+// Sound and page navigation for NOVA
 // The navbar stays on the page, so the music doesn't start over when you switch tabs
 
 (() => {
@@ -32,7 +32,7 @@
   music.volume = 0.3;
   music.preload = 'auto';
 
-  // A few click players make repeated clicks sound better
+  // Reuse a few click sounds so fast clicks do not cut each other off
   const clickSounds = [];
   for (let i = 0; i < 5; i++) {
     const sound = new Audio(clickPath);

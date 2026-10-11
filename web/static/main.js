@@ -1,6 +1,6 @@
-// The live sky map
+// Live sky map for the Explore page
 
-// Python sends us the positions, then we draw the objects here
+// Flask calculates the sky, and this file draws it on the canvas
 const el = id => document.getElementById(id);
 const canvas = el('skyCanvas');
 const ctx = canvas.getContext('2d');
@@ -36,7 +36,7 @@ function compass(a) {
   return ['north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest'][Math.round(a / 45) % 8];
 }
 
-// get the sky data from python
+// Ask Flask for fresh coordinates, then update the map and lists
 
 async function loadSky() {
   if (live)
@@ -243,7 +243,7 @@ function stop() {
   novaAudio.duck(false);
 }
 
-// same function for mouse and keyboard
+// Mouse, keyboard, and tours all use the same selection function
 
 function select(id, tell = false, fromTour = false) {
   if (!fromTour && tour.length)

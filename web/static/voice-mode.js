@@ -1,4 +1,4 @@
-// Ask NOVA voice chat
+// Voice chat on the Ask NOVA page
 
 // This stays separate from the sky map so each page is easier to work on
 (() => {
@@ -68,7 +68,7 @@
     return body;
   }
 
-  // browser speech only if elevenlabs voice fails
+  // If ElevenLabs is down, use the browser voice instead
   function backupVoice(t) {
     if (!sound.canSpeak())
       return;
