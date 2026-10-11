@@ -42,7 +42,7 @@ enum HapticPattern: String, CaseIterable {
 
 @MainActor
 final class HapticsManager: ObservableObject {
-    let objectWillChange = ObservableObjectPublisher()
+    let objectWillChange = ObservableObjectPublisher()   // explicit, so conformance never depends on synthesis
     private var engine: CHHapticEngine?
     private let supportsCore = CHHapticEngine.capabilitiesForHardware().supportsHaptics
     var settingsProvider: @MainActor () -> AppSettings = { AppSettings() }
@@ -63,9 +63,17 @@ final class HapticsManager: ObservableObject {
         } catch { engine = nil }
     }
 
+    private var lastSelectTime = Date.distantPast
+
     func play(_ pattern: HapticPattern) {
         let s = settingsProvider()
         guard s.hapticsEnabled else { return }
+        // Taps can come from several places at once (the button style and its action); play only one.
+        if pattern == .select {
+            let now = Date()
+            guard now.timeIntervalSince(lastSelectTime) > 0.09 else { return }
+            lastSelectTime = now
+        }
         if supportsCore, playCore(pattern, intensity: Float(s.hapticIntensity)) { return }
         playFallback(pattern)
     }
