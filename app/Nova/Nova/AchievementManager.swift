@@ -8,7 +8,6 @@
 import Foundation
 import Combine
 
-// MARK: - Achievements
 
 struct Achievement: Identifiable {
     let id: String
@@ -47,6 +46,8 @@ enum Rewards {
         Achievement(id: "five", title: "Five Objects Discovered", detail: "Discover five different objects.", symbol: "5.circle") { $0.discoveredIDs.count >= 5 },
         Achievement(id: "solar", title: "Solar System Explorer", detail: "Discover the Moon, Jupiter and Saturn.", symbol: "globe") {
             Set(["moon", "jupiter", "saturn"]).isSubset(of: $0.discoveredIDs) },
+        Achievement(id: "wanderers", title: "The Five Wanderers", detail: "Discover Mercury, Venus, Mars, Jupiter and Saturn, the planets people have watched since ancient times.", symbol: "sparkles") {
+            Set(["mercury", "venus", "mars", "jupiter", "saturn"]).isSubset(of: $0.discoveredIDs) },
         Achievement(id: "regular", title: "Night Sky Regular", detail: "Use Nova on five different days. No late nights needed.", symbol: "calendar") { $0.usageDays.count >= 5 }
     ]
 
@@ -57,9 +58,9 @@ enum Rewards {
         Mission(id: "m_stars3", title: "Discover three bright stars", detail: "Find or identify three different stars.",
                 isMet: { kinds($0, .star).count >= 3 },
                 progressText: { "\(min(3, kinds($0, .star).count)) of 3" }),
-        Mission(id: "m_planet", title: "Learn about a planet", detail: "Listen to the deeper description of Jupiter or Saturn.",
-                isMet: { $0.learned.contains("jupiter") || $0.learned.contains("saturn") },
-                progressText: { ($0.learned.contains("jupiter") || $0.learned.contains("saturn")) ? "Done" : "Not yet" }),
+        Mission(id: "m_planet", title: "Learn about a planet", detail: "Listen to the deeper description of any planet.",
+                isMet: { p in p.learned.contains { Catalog.object(id: $0)?.kind == .planet } },
+                progressText: { p in p.learned.contains { Catalog.object(id: $0)?.kind == .planet } ? "Done" : "Not yet" }),
         Mission(id: "m_two_con", title: "Explore two constellations", detail: "Discover stars from two different constellations.",
                 isMet: { constellations($0).count >= 2 },
                 progressText: { "\(min(2, constellations($0).count)) of 2" }),
@@ -68,9 +69,8 @@ enum Rewards {
                 progressText: { p in p.storiesHeard.contains { Catalog.object(id: $0)?.kind == .star } ? "Done" : "Not yet" })
     ]
 
-    /// An optional, low-pressure daily suggestion. No streaks, no penalties.
     static func dailySuggestion(on date: Date = Date()) -> CelestialObject {
-        let stars = Catalog.all.filter { $0.kind == .star || $0.kind == .constellation }
+        let stars = Catalog.curated.filter { $0.kind == .star || $0.kind == .constellation || $0.kind == .planet }
         let day = Calendar.current.ordinality(of: .day, in: .year, for: date) ?? 1
         return stars[day % stars.count]
     }
@@ -87,7 +87,6 @@ final class AchievementManager: ObservableObject {
         self.persistence = persistence; self.speech = speech; self.audio = audio; self.haptics = haptics
     }
 
-    /// Checks all achievements and celebrates newly unlocked ones (speech + sound + haptics + VoiceOver announcement).
     @discardableResult
     func evaluate() -> [Achievement] {
         var fresh: [Achievement] = []
@@ -103,7 +102,6 @@ final class AchievementManager: ObservableObject {
         return fresh
     }
 
-    /// Called whenever an object is found or identified. Returns whether it was new.
     @discardableResult
     func celebrateDiscovery(_ o: CelestialObject, method: DiscoveryMethod) -> Bool {
         let isNew = persistence.recordDiscovery(o.id, method: method)
