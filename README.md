@@ -162,7 +162,7 @@ NOVA/
 Thanks to the projects and services that make NOVA possible:
 
 - [Skyfield](https://rhodesmill.org/skyfield/) for astronomical position calculations
-- [Yale Bright Star Data}(http://tdc-www.harvard.edu/catalogs/bsc5.html) for star catalog data on mobile
+- [Yale Bright Star Data](http://tdc-www.harvard.edu/catalogs/bsc5.html) for star catalog data on mobile
 - [HYG Database](https://github.com/astronexus/HYG-Database) for star catalog data
 - [Stellarium Sky Cultures](https://github.com/Stellarium/stellarium-skycultures) for constellation connections
 - [NASA/JPL ephemerides](https://ssd.jpl.nasa.gov/planets/eph_export.html) for solar system positions
