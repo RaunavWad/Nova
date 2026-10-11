@@ -13,7 +13,7 @@ struct Achievement: Identifiable {
     let id: String
     let title: String
     let detail: String
-    let symbol: String                       // SF Symbol, decoration only
+    let symbol: String                      
     let isMet: (UserProgress) -> Bool
 }
 
