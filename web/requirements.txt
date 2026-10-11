@@ -7,3 +7,4 @@ python-dotenv>=1.0,<2
 itsdangerous>=2.1,<3
 numpy>=1.26,<3
 skyfield>=1.49,<2
+gunicorn>=22,<24
