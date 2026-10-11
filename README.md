@@ -1,11 +1,11 @@
 <div align="center">
-  <img src="web/static/images/NOVA%20Logo%20With%20BG.png" alt="NOVA logo" width="110">
+  <img src="web/static/images/NOVA%20Logo%20No%20BG.png" alt="NOVA logo" width="110">
 
   # NOVA - The Universe Is For Everyone
 
   **Explore the universe through sound, voice guidance, and touch**
 
-  A project built for **HackPHS 2026 - Into the Sky**
+  A project built for **HackPHS 2026 - Into the Skies**
 </div>
 
 ## Why we built NOVA
