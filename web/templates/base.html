@@ -13,7 +13,7 @@
 <a href="#main" class="skip">Skip to content</a>
 <header class="navbar">
   <a href="{{ url_for('home') }}" class="logo" aria-label="NOVA home">
-    <img src="{{ url_for('static',filename='images/NOVA Logo No BG.png') }}" alt="NOVA">
+    <img src="{{ url_for('static',filename='images/NOVA Logo No BG.png') }}" alt="NOVA">nova
   </a>
   <nav class="site-nav" aria-label="Main navigation">
     <a href="{{ url_for('home') }}" {% if page=='home' %}aria-current="page"{% endif %}>Home</a>
@@ -22,11 +22,11 @@
     <a href="{{ url_for('guide') }}" {% if page=='guide' %}aria-current="page"{% endif %}>How to listen</a>
   </nav>
   {% if page=='explore' %}
-  <button id="audioToggle" class="audio-btn" type="button" aria-pressed="false" aria-label="Enable audio" title="Enable audio"
+  <button id="audioToggle" class="audio-btn" type="button" aria-label="Audio off, select for full audio" title="Audio off, select for full audio"
     data-on-src="{{ url_for('static',filename='images/audio.png') }}"
     data-off-src="{{ url_for('static',filename='images/audio off.png') }}">
     <img id="audioIcon" src="{{ url_for('static',filename='images/audio off.png') }}" alt="" aria-hidden="true">
-    <span id="audioLabel">Enable audio</span>
+    <span id="audioLabel">Audio off</span>
   </button>
   {% else %}
   <a class="nav-cta" href="{{ url_for('explore') }}">Explore sky ↗</a>
@@ -35,7 +35,7 @@
 <main id="main">{% block content %}{% endblock %}</main>
 <footer>
   <a class="logo" href="{{ url_for('home') }}" aria-label="NOVA home">
-    <img src="{{ url_for('static',filename='images/NOVA Logo No BG.png') }}" alt="NOVA">
+    <img src="{{ url_for('static',filename='images/NOVA Logo No BG.png') }}" alt="NOVA">nova
   </a>
   <p>The universe is for everyone</p>
   <nav class="footer-nav" aria-label="Footer navigation">

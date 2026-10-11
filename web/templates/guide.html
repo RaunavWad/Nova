@@ -7,16 +7,17 @@
  <h1 class="page-title">A sky you can <em>hear</em></h1>
  <p class="page-lead">NOVA is designed to work with sound, a keyboard, a screen reader or a mouse</p>
  <div class="info-grid guide-steps">
-   <article><span class="info-num">01</span><h3>Explore the sky</h3><p>Choose your observing location and leave the date on Live or set another date to visit a different sky</p></article>
+   <article><span class="info-num">01</span><h3>Explore the sky</h3><p>Choose your observing location and leave the date on Live or set another date to visit a different sky  Select a constellation to isolate it and start a guided tour right from the sidebar</p></article>
    <article><span class="info-num">02</span><h3>Find a star or planet</h3><p>Use the searchable star list or explore the map with arrow keys and Enter</p></article>
-   <article><span class="info-num">03</span><h3>Listen and ask</h3><p>Turn on audio to hear descriptions or open Ask NOVA to ask an astronomy question aloud</p></article>
+   <article><span class="info-num">03</span><h3>Listen and ask</h3><p>Choose Full audio for music, click sounds and narration, Voice only for narration without music, or Audio off to mute everything</p></article>
  </div>
  <section class="guide-info"><p class="eyebrow">KEYBOARD ACCESS</p><h2>Designed for more than sight</h2><div class="keyboard-grid">
    <div><strong>Tab</strong><span>Move between the controls and the map</span></div>
-   <div><strong>Arrow keys</strong><span>Move between stars or planets when the map is focused</span></div>
-   <div><strong>Enter</strong><span>Hear more about the currently selected object</span></div>
+   <div><strong>Arrow keys</strong><span>Move between visible stars or planets when the map is focused  When a constellation is selected, arrows navigate only its stars</span></div>
+   <div><strong>Enter</strong><span>Hear more about the currently selected object</span></div><div><strong>Escape</strong><span>Clear any selected star or constellation while using the map</span></div>
    <div><strong>Search</strong><span>Look up a star or planet by name instead of using the map</span></div>
  </div></section>
+ <section class="guide-info"><p class="eyebrow">THREE AUDIO MODES</p><h2>Choose how NOVA sounds</h2><p><strong>Full audio</strong> includes looping ambient music, button-click effects and star narration</p><p><strong>Voice only</strong> keeps ElevenLabs or browser narration but turns off music and click sounds</p><p><strong>Audio off</strong> mutes all NOVA audio</p><p>Use the audio control in the Explore page navigation to switch between modes  Music plays continuously while you stay on the Explore page and have Full audio selected</p></section>
  <section class="guide-info"><p class="eyebrow">WHAT LIVE MEANS</p><h2>A calculated view of the sky</h2><p>NOVA uses catalog positions and astronomy calculations to show where stars and planets should be for your location and time  Live mode refreshes every 30 seconds while the Explore page is open</p><p>Constellation outlines are patterns of connections between stars  Their shape moves across your sky because their stars are recalculated, not because the connections themselves change</p></section>
  <div class="guide-buttons"><a class="primary-btn" href="{{ url_for('explore') }}">Explore the sky ↗</a><a class="secondary-btn" href="{{ url_for('ask_nova') }}">Ask NOVA ↗</a></div>
 </section>

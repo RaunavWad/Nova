@@ -1205,3 +1205,17 @@ footer .logo img { height:39px }
 @media(prefers-reduced-motion:reduce) {
  * {scroll-behavior:auto !important;transition:none !important}
 }
+
+
+/* constellation choice + tour live right next to map */
+.constellation-option[aria-pressed="true"] {background:#1b3045;border-color:var(--cyan);box-shadow:inset 3px 0 #68E1FF}
+.con-focus {border-top:1px solid var(--border);padding-top:20px;margin-top:16px}
+.con-focus h4 {font-family:'Instrument Serif',serif;font-size:29px;font-weight:400;margin:4px 0}
+.con-focus .muted {font-size:13px;line-height:1.55;margin:7px 0 17px}
+.con-tour {margin-top:18px;padding:18px}
+.con-tour h4 {font-family:'Instrument Serif',serif;font-size:28px;font-weight:400;margin:0}
+.con-tour .tour-controls {gap:8px;margin-top:17px}
+.con-tour .tour-controls button {flex:1 1 44%}
+.constellation-panel #clearCon {margin-top:15px}
+.audio-btn {min-width:156px}
+@media(max-width:650px) { .audio-btn {min-width:0} }

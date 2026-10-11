@@ -14,18 +14,50 @@ const cities = {
 let coords = cities.robbinsville;
 let everything = [], lines = [], constellationNames = {};
 let focusedCon = null, showConLines = true, showConNames = true;
-let chosen = null, mode = 'sky', audio = false, live = true;
+let chosen = null, mode = 'sky', audioMode = 'off', live = true;
 let storyCache = {}, storyTimer, requestNum = 0;
 let mapSpots = [];
 let voiceAvailable = false, currentAudio = null, audioUrl = null;
 let talkingRequest = null, speechRun = 0;
-let tour = null, tourStep = 0;
+let tour = [], tourStep = 0;
 
-const tours = {
-  orion:['Betelgeuse','Bellatrix','Alnitak','Alnilam','Mintaka','Rigel'],
-  lyra:['Vega','Sheliak','Sulafat'],
-  ursa:['Dubhe','Merak','Alioth','Mizar','Alkaid']
-};
+// sounds stay on the explorer page, never send audio files to the AI
+const ambientTrack = new Audio('/static/sound/ambient.mp3');
+ambientTrack.loop = true;
+ambientTrack.volume = .17;
+
+const clickTrack = new Audio('/static/sound/click_effect.mp3');
+clickTrack.volume = .45;
+
+function narrationOn() { return audioMode !== 'off' }
+
+function soundClick() {
+  if(audioMode !== 'full')return;
+  try { clickTrack.currentTime=0; clickTrack.play().catch(()=>{}) } catch(e) {}
+}
+
+// any ordinary button / link click gets the little sound
+// but only in FULL audio, not the speech-only mode
+document.addEventListener('click',e=>{
+  if(e.target.closest('button,a')) soundClick();
+},true);
+
+function setAudioMode(next) {
+  audioMode=next;
+  if(next === 'full') {
+    ambientTrack.play().catch(()=>{
+      if(audioMode==='full')el('skyStatus').textContent='Music could not start  Check static/sound/ambient.mp3';
+    });
+  } else {
+    ambientTrack.pause();
+    ambientTrack.currentTime=0;
+  }
+  if(next==='off') {
+    clearTimeout(storyTimer);
+    stop();
+  }
+  updateAudioButton();
+}
 
 function dateNow() {
   let d = new Date(), pad=n=>String(n).padStart(2,'0');
@@ -63,11 +95,10 @@ async function loadSky() {
       : 'Night sky positions are ready';
     if(el('skyStatus').textContent!==skyMessage && !el('skyStatus').textContent.startsWith('Selected ')) el('skyStatus').textContent=skyMessage;
 
-    if(!chosen || !everything.some(x=>x.id===chosen)) {
-      chosen = visible()[0]?.id || everything[0]?.id;
-    }
+    // don't auto-select anything after clearing the map
+    if(chosen && !everything.some(x=>x.id===chosen)) chosen=null;
 
-    showList(); info(); updateConstellations(); drawMap();
+    updateConstellations(); showList(); info(); drawMap();
     el('skyUpdated').textContent = 'Calculated at '+new Date().toLocaleTimeString();
     el('skyTimeMode').textContent = live ? 'Live sky updates every 30 seconds' : 'Viewing a selected date and time';
   } catch(e) {
@@ -132,13 +163,18 @@ function summary(o) {
 
 function info() {
   let o = everything.find(x=>x.id===chosen);
-  el('starName').textContent=o?.name || 'Choose a star';
-  el('starMeta').textContent = o ? (o.type==='planet'?'Planet or moon':o.constellation) : '';
-  el('starFacts').textContent = storyCache[chosen] || summary(o);
+  let conName=focusedCon?(constellationNames[focusedCon]||focusedCon):null;
+  el('starName').textContent=o?.name || conName || 'Choose a star or planet';
+  el('starMeta').textContent = o ? (o.type==='planet'?'Planet or moon':o.constellation) : (conName?'Constellation':'');
+  el('starFacts').textContent = o ? (storyCache[chosen] || summary(o)) : (conName?'Choose a star in this constellation or start the guided tour from the sidebar':'Choose a star or planet to begin');
+  el('playBtn').disabled=!o;
   el('starDirection').textContent = o ?
     (o.alt>0 ? `${compass(o.az)}  ·  ${Math.round(o.alt)} degrees above the horizon` : 'Below the horizon') : '';
   let askLink=el('askAboutStar');
-  if(o && askLink)askLink.href='/ask?about='+encodeURIComponent(o.name);
+  if(askLink) {
+    askLink.href=o?'/ask?about='+encodeURIComponent(o.name):'/ask';
+    askLink.textContent=o?'Ask NOVA about this ↗':'Ask NOVA ↗';
+  }
   el('starList').querySelectorAll('button').forEach(b=>{
     b.setAttribute('aria-pressed',String(b.dataset.id===chosen));
   });
@@ -151,13 +187,16 @@ function browserVoice(t) {
   }
   speechSynthesis.cancel();
   let v=new SpeechSynthesisUtterance(t);
-  v.rate=.9; speechSynthesis.speak(v);
+  v.rate=.9;
+  v.onend=()=>ambientTrack.volume=.17;
+  speechSynthesis.speak(v);
 }
 
 // play an actual ElevenLabs mp3 from flask
 async function say(t,id=null) {
-  if(!audio)return;
+  if(!narrationOn())return;
   stop();
+  if(audioMode==='full') ambientTrack.volume=.08;
   let myTurn=speechRun;
 
   if(!id || !voiceAvailable) {browserVoice(t);return}
@@ -177,6 +216,7 @@ async function say(t,id=null) {
     currentAudio=new Audio(audioUrl);
     let clip=currentAudio, url=audioUrl;
     currentAudio.onended=()=>{
+      ambientTrack.volume=.17;
       if(currentAudio===clip)currentAudio=null;
       URL.revokeObjectURL(url);
       if(audioUrl===url)audioUrl=null;
@@ -197,13 +237,15 @@ function stop() {
   if(currentAudio){currentAudio.pause();currentAudio=null}
   if(audioUrl){URL.revokeObjectURL(audioUrl);audioUrl=null}
   if('speechSynthesis' in window)speechSynthesis.cancel();
+  ambientTrack.volume=.17;
 }
 
 // selecting with mouse or arrow keys
-function select(id, tell=false) {
+function select(id, tell=false, fromTour=false) {
+  if(!fromTour && tour.length) finishTour();
   chosen = id;
   clearTimeout(storyTimer);
-  info(); drawMap();
+  info(); showList(); drawMap();
 
   let obj=everything.find(o=>o.id===id);
   if(!obj) return;
@@ -211,7 +253,7 @@ function select(id, tell=false) {
 
   stop();
   // wait a bit before asking AI and voice so arrow keys don't burn credits
-  storyTimer=setTimeout(()=>getStory(id,tell && audio),850);
+  storyTimer=setTimeout(()=>getStory(id,tell && narrationOn()),850);
 }
 
 async function getStory(id, readOut=false) {
@@ -258,31 +300,67 @@ function liveGroups() {
   return [...groups.values()].sort((a,b)=>b.edges-a.edges || a.name.localeCompare(b.name));
 }
 
+function finishTour() {
+  tour=[];
+  tourStep=0;
+  el('tourPlayer').hidden=true;
+}
+
+function clearSelections() {
+  focusedCon=null;
+  chosen=null;
+  finishTour();
+  clearTimeout(storyTimer);
+  stop();
+  updateConstellations();
+  showList();info();drawMap();
+  el('skyStatus').textContent='Selection cleared';
+}
+
+function chooseConstellation(code) {
+  if(focusedCon===code) { clearSelections();return }
+  focusedCon=code;
+  chosen=null; // don't keep the star from the previous selection
+  finishTour();
+  clearTimeout(storyTimer);stop();
+  updateConstellations();showList();info();drawMap();
+  el('skyStatus').textContent='Focused on '+(constellationNames[code]||code);
+}
+
 function updateConstellations() {
   let groups=liveGroups();
   let box=el('constellationList');
   let focus=document.activeElement?.dataset?.constellation;
+  let oldScroll=box.scrollTop;
   box.innerHTML='';
   el('constellationCount').textContent=`${groups.length} patterns have stars above the horizon`;
+
+  if(focusedCon && !groups.some(g=>g.id===focusedCon)) {
+    focusedCon=null;chosen=null;finishTour();
+    clearTimeout(storyTimer);stop();
+  }
+
   for(let group of groups) {
     let b=document.createElement('button');
-    b.type='button';
-    b.className='constellation-option';
+    b.type='button';b.className='constellation-option';
     b.dataset.constellation=group.id;
     b.setAttribute('aria-pressed',String(focusedCon===group.id));
     b.textContent=group.name+'  ·  '+group.stars.size+' stars';
-    b.addEventListener('click',()=>{
-      focusedCon=focusedCon===group.id ? null : group.id;
-      el('clearCon').hidden=!focusedCon;
-      updateConstellations();showList();drawMap();
-    });
+    b.addEventListener('click',()=>chooseConstellation(group.id));
     box.appendChild(b);
   }
-  if(focusedCon && !groups.some(g=>g.id===focusedCon)) {
-    focusedCon=null;
-    el('clearCon').hidden=true;
+  box.scrollTop=oldScroll;
+  if(focus) [...box.querySelectorAll('button')].find(b=>b.dataset.constellation===focus)?.focus();
+
+  let current=groups.find(g=>g.id===focusedCon);
+  el('clearCon').hidden=!current;
+  el('conFocus').hidden=!current;
+  if(current) {
+    el('conFocusName').textContent=current.name;
+    el('conFocusInfo').textContent=`${current.stars.size} catalog stars above the horizon  Choose a guided tour or click any star in the constellation`;
+    el('startConTour').disabled=current.stars.size<2;
+    el('startConTour').textContent=current.stars.size<2 ? 'Not enough visible stars' : 'Start guided tour ↗';
   }
-  if(focus) box.querySelector(`[data-constellation="${focus}"]`)?.focus();
 }
 
 function drawMap() {
@@ -300,6 +378,8 @@ function drawMap() {
   mapSpots=[];
   for(let o of everything) {
     if(o.alt<=0)continue;
+    // selecting a constellation hides everything outside it, even planets
+    if(focusedCon && (o.type!=='star' || o.constellation!==constellationNames[focusedCon]))continue;
     let p=spot(o);pos.set(o.id,p);
     mapSpots.push({...p,id:o.id});
   }
@@ -326,7 +406,7 @@ function drawMap() {
   for(let o of everything) {
     let p=pos.get(o.id);
     if(!p||o.id===chosen)continue;
-    ctx.globalAlpha=(focusedCon && o.type==='star' && o.constellation!==constellationNames[focusedCon])?.26:.88;
+    ctx.globalAlpha=.88;
     ctx.fillStyle=o.type==='planet'?'#B7A4FF':'#68E1FF';
     ctx.beginPath();ctx.arc(p.x,p.y,o.type==='planet'?5:Math.max(1.1,3.8-(o.mag||0)*.4),0,Math.PI*2);ctx.fill();
     if(o.type==='planet'||(o.mag!==null&&o.mag<.4)) {
@@ -388,6 +468,7 @@ canvas.addEventListener('click',e=>{
   let y=(e.clientY-r.top)*canvas.height/r.height;
   let hits=mapSpots.map(p=>({...p,d:Math.hypot(x-p.x,y-p.y)})).sort((a,b)=>a.d-b.d);
   if(hits[0] && hits[0].d<22) select(hits[0].id,true);
+  else clearSelections(); // click outside a star or constellation to reset
 });
 
 // little hand cursor when the mouse is near a star
@@ -400,10 +481,11 @@ canvas.addEventListener('mousemove',e=>{
 
 // keyboard on the map itself, goes to next nearest star in that direction
 canvas.addEventListener('keydown',e=>{
-  if(!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Enter',' '].includes(e.key)) return;
+  if(!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Enter',' ','Escape'].includes(e.key)) return;
   e.preventDefault();
+  if(e.key==='Escape') { clearSelections();return }
   if(e.key==='Enter'||e.key===' ') {
-    audio=true;updateAudioButton();
+    if(audioMode==='off')setAudioMode('voice');
     if(chosen)getStory(chosen,true);return;
   }
   if(!mapSpots.length) return;
@@ -430,29 +512,30 @@ el('starList').addEventListener('keydown',e=>{
   let next=bs[(i+step+bs.length)%bs.length];next.focus();next.click();
 });
 
-// image + text update when audio changes
+// 3 stages = full sounds, voice only, or silence
 function updateAudioButton() {
-  let btn=el('audioToggle');
-  el('audioIcon').src=audio ? btn.dataset.onSrc : btn.dataset.offSrc;
-  el('audioLabel').textContent=audio ? 'Audio enabled' : 'Enable audio';
-  btn.setAttribute('aria-pressed',String(audio));
-  btn.setAttribute('aria-label',audio ? 'Disable audio' : 'Enable audio');
-  btn.title=audio ? 'Disable audio' : 'Enable audio';
+  const btn=el('audioToggle');
+  const labels={off:'Audio off',full:'Full audio',voice:'Voice only'};
+  const next={off:'full',full:'voice',voice:'off'}[audioMode];
+  el('audioIcon').src=audioMode==='off'?btn.dataset.offSrc:btn.dataset.onSrc;
+  el('audioLabel').textContent=labels[audioMode];
+  btn.setAttribute('aria-label',`${labels[audioMode]}  Select for ${labels[next]}`);
+  btn.title=`${labels[audioMode]}  Click for ${labels[next]}`;
 }
 
 el('audioToggle').addEventListener('click',()=>{
-  audio=!audio;
-  updateAudioButton();
-  if(audio) say('Welcome to Nova, choose a star or planet to begin');else stop();
+  const next={off:'full',full:'voice',voice:'off'}[audioMode];
+  setAudioMode(next);
+  if(next==='full')soundClick(); // first click turns sound on
 });
 
 el('playBtn').addEventListener('click',()=>{
-  audio=true;updateAudioButton();
-  if(chosen) getStory(chosen,true);
+  if(audioMode==='off')setAudioMode('voice');
+  if(chosen)getStory(chosen,true);
 });
 el('stopBtn').addEventListener('click',()=>{
   clearTimeout(storyTimer);stop();
-  el('skyStatus').textContent='Audio stopped';
+  el('skyStatus').textContent='Narration stopped';
 });
 
 el('yourSkyBtn').addEventListener('click',()=>{
@@ -485,33 +568,55 @@ el('locateBtn').addEventListener('click',()=>{
 // map is now visible all the time on Explore
 el('showLines').addEventListener('change',e=>{showConLines=e.target.checked;drawMap()});
 el('showLabels').addEventListener('change',e=>{showConNames=e.target.checked;drawMap()});
-el('clearCon').addEventListener('click',()=>{
-  focusedCon=null;el('clearCon').hidden=true;updateConstellations();showList();drawMap();
-});
+el('clearCon').addEventListener('click',clearSelections);
 
-// old tour cards still work, but now using real catalog star names
+// tour any visible constellation, not only 3 hardcoded ones
+// use the brightest connected stars to keep the tour a useful length
 function showTour() {
-  if(!tour)return;
-  let name=tour[tourStep];
-  let obj=everything.find(s=>s.name.toLowerCase()===name.toLowerCase());
+  if(!tour.length)return;
+  let obj=everything.find(x=>x.id===tour[tourStep]);
   if(!obj)return;
-  el('tourProgress').textContent=`STAR ${tourStep+1} OF ${tour.length}`;
+  el('tourProgress').textContent=`${constellationNames[focusedCon]||'CONSTELLATION'}  ·  STAR ${tourStep+1} OF ${tour.length}`;
   el('tourStar').textContent=obj.name;
   el('tourText').textContent=summary(obj);
   el('prevTour').disabled=tourStep===0;
   el('nextTour').disabled=tourStep===tour.length-1;
-  select(obj.id,true);
+  select(obj.id,true,true);
 }
 
-document.querySelectorAll('[data-tour]').forEach(b=>b.addEventListener('click',()=>{
-  tour=tours[b.dataset.tour];tourStep=0;
-  el('tourPlayer').hidden=false;showTour();
-  el('tourPlayer').scrollIntoView({block:'center',behavior:'smooth'});
-}));
-el('nextTour').addEventListener('click',()=>{if(tour&&tourStep<tour.length-1){tourStep++;showTour()}});
-el('prevTour').addEventListener('click',()=>{if(tour&&tourStep>0){tourStep--;showTour()}});
-el('repeatTour').addEventListener('click',()=>{if(chosen)getStory(chosen,true)});
-el('endTour').addEventListener('click',()=>{tour=null;clearTimeout(storyTimer);stop();el('tourPlayer').hidden=true});
+el('startConTour').addEventListener('click',()=>{
+  if(!focusedCon)return;
+  let group=liveGroups().find(g=>g.id===focusedCon);
+  if(!group)return;
+  tour=[...group.stars].map(id=>everything.find(o=>o.id===id))
+    .filter(o=>o && o.alt>0).sort((a,b)=>a.mag-b.mag).slice(0,10).map(o=>o.id);
+  if(tour.length<2) {
+    el('skyStatus').textContent='Not enough stars are above the horizon for a guided tour';
+    finishTour();return;
+  }
+  tourStep=0;
+  // starting an audio tour explicitly turns narration on, even if muted before
+  if(audioMode==='off')setAudioMode('voice');
+  el('tourPlayer').hidden=false;
+  showTour();
+  el('tourPlayer').scrollIntoView({block:'nearest',behavior:'smooth'});
+});
+el('nextTour').addEventListener('click',()=>{
+  if(tour.length && tourStep<tour.length-1) { tourStep++;showTour() }
+});
+el('prevTour').addEventListener('click',()=>{
+  if(tour.length && tourStep>0) { tourStep--;showTour() }
+});
+el('repeatTour').addEventListener('click',()=>{
+  if(!chosen)return;
+  if(audioMode==='off')setAudioMode('voice');
+  getStory(chosen,true);
+});
+el('endTour').addEventListener('click',()=>{
+  finishTour();clearTimeout(storyTimer);stop();chosen=null;
+  showList();info();drawMap();
+  el('skyStatus').textContent='Guided tour ended';
+});
 
 // find out which services you actually connected
 fetch('/api/services').then(r=>r.json()).then(d=>{

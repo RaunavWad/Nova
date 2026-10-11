@@ -27,15 +27,32 @@
    <p class="help-text">Positions are calculated from star and planet data, not a live camera — cloud cover and light pollution are not included</p>
    <div class="sky-map-layout">
      <div class="map-column">
-       <div class="canvas-wrap"><canvas id="skyCanvas" width="820" height="440" tabindex="0" role="group" aria-label="Interactive sky map, use arrow keys to select stars and planets and press Enter to hear about one">Sky map unavailable, use the star list below</canvas></div>
-       <p class="map-help">North at the top · East to the right · Horizon is the outer circle</p>
+       <div class="canvas-wrap"><canvas id="skyCanvas" width="820" height="440" tabindex="0" role="group" aria-label="Interactive sky map, use arrow keys to select stars and planets, Enter to hear a description, or Escape to clear the selection">Sky map unavailable, use the star list below</canvas></div>
+       <p class="map-help">North at the top · East to the right · Select a constellation to isolate it · Click empty map space to clear selection</p>
      </div>
      <aside class="constellation-panel" aria-labelledby="visibleConTitle">
        <p class="eyebrow">LIVE CONSTELLATIONS</p>
        <h3 id="visibleConTitle">Above your horizon</h3>
        <p id="constellationCount" class="muted">Loading visible constellations</p>
        <div id="constellationList" class="constellation-list" role="group" aria-label="Visible constellations"></div>
-       <button type="button" id="clearCon" class="secondary-btn mini-btn" hidden>Show all constellations</button>
+       <div id="conFocus" class="con-focus" hidden>
+         <p class="eyebrow">NOW EXPLORING</p>
+         <h4 id="conFocusName">Constellation</h4>
+         <p id="conFocusInfo" class="muted"></p>
+         <button id="startConTour" type="button" class="primary-btn mini-btn">Start guided tour ↗</button>
+       </div>
+       <div id="tourPlayer" class="tour-player con-tour" hidden>
+         <p id="tourProgress" class="eyebrow">GUIDED TOUR</p>
+         <h4 id="tourStar">Your tour</h4>
+         <p id="tourText" aria-live="polite"></p>
+         <div class="tour-controls">
+           <button id="prevTour" class="secondary-btn mini-btn" type="button">Previous</button>
+           <button id="repeatTour" class="secondary-btn mini-btn" type="button">Hear again</button>
+           <button id="nextTour" class="primary-btn mini-btn" type="button">Next star →</button>
+           <button id="endTour" class="secondary-btn mini-btn" type="button">End tour</button>
+         </div>
+       </div>
+       <button type="button" id="clearCon" class="secondary-btn mini-btn" hidden>Clear selection</button>
      </aside>
    </div>
 
@@ -48,22 +65,12 @@
    <div id="starList" class="star-list" role="group" aria-label="Stars and planets to explore"></div>
 
    <div class="selected-star">
-     <div><p class="eyebrow">CURRENTLY EXPLORING</p><h3 id="starName">Choose a star</h3><p id="starMeta"></p><p id="starFacts"></p><p id="starDirection"></p></div>
-     <div class="star-actions"><button id="playBtn" class="primary-btn" type="button">Hear description</button><button id="stopBtn" class="secondary-btn" type="button">Stop audio</button><a id="askAboutStar" class="secondary-btn" href="{{ url_for('ask_nova') }}">Ask NOVA about this ↗</a></div>
+     <div><p class="eyebrow">CURRENTLY EXPLORING</p><h3 id="starName">Choose a star or constellation</h3><p id="starMeta"></p><p id="starFacts"></p><p id="starDirection"></p></div>
+     <div class="star-actions"><button id="playBtn" class="primary-btn" type="button">Hear description</button><button id="stopBtn" class="secondary-btn" type="button">Stop narration</button><a id="askAboutStar" class="secondary-btn" href="{{ url_for('ask_nova') }}">Ask NOVA about this ↗</a></div>
    </div>
  </div>
 </section>
 
-<section class="content-section" id="tours">
- <p class="eyebrow">GUIDED TOURS</p><h2>Follow the constellations</h2>
- <p class="section-intro">These tours use real star positions for the date and location you've selected above</p>
- <div class="tour-grid">
-   <article class="tour-card"><span class="tour-symbol" aria-hidden="true">✧</span><p class="eyebrow">CONSTELLATION 01</p><h3>Orion</h3><p>Follow Orion the Hunter through his brightest stars</p><button type="button" data-tour="orion" class="secondary-btn">Start tour ↗</button></article>
-   <article class="tour-card"><span class="tour-symbol" aria-hidden="true">✦</span><p class="eyebrow">CONSTELLATION 02</p><h3>Lyra</h3><p>Discover Vega and the stars of the celestial lyre</p><button type="button" data-tour="lyra" class="secondary-btn">Start tour ↗</button></article>
-   <article class="tour-card"><span class="tour-symbol" aria-hidden="true">✳</span><p class="eyebrow">CONSTELLATION 03</p><h3>Ursa Major</h3><p>Trace the Big Dipper through the Great Bear</p><button type="button" data-tour="ursa" class="secondary-btn">Start tour ↗</button></article>
- </div>
- <div id="tourPlayer" class="tour-player" hidden><p id="tourProgress" class="eyebrow">GUIDED TOUR</p><h3 id="tourStar">Your tour</h3><p id="tourText" aria-live="polite"></p><div class="tour-controls"><button id="prevTour" class="secondary-btn" type="button">Previous</button><button id="repeatTour" class="secondary-btn" type="button">Hear again</button><button id="nextTour" class="primary-btn" type="button">Next star →</button><button id="endTour" class="secondary-btn" type="button">End tour</button></div></div>
-</section>
 <section class="content-section guide-banner"><p class="eyebrow">NEW TO NOVA</p><h2>Listening is another way to explore</h2><p>Learn the keyboard shortcuts and audio features before you begin</p><a class="primary-btn" href="{{ url_for('guide') }}">How to listen ↗</a></section>
 {% endblock %}
 {% block scripts %}<script src="{{ url_for('static',filename='main.js') }}"></script>{% endblock %}
