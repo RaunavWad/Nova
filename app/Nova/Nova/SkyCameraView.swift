@@ -5,26 +5,27 @@
 //  Created by Vihaan Deshmukh on 10/10/26.
 //
 
-import SwiftUI
-import Combine
 import CoreLocation
+import Combine
+import SwiftUI
 @preconcurrency import AVFoundation
 
-// MARK: - Camera plumbing
 
-/// Live camera preview only. Frames are never analysed, recorded or stored: the labels shown on top come from
-/// astronomy calculations plus the phone's motion sensors, not from the picture.
 @MainActor
 final class CameraManager: ObservableObject {
     @Published private(set) var authorization = AVCaptureDevice.authorizationStatus(for: .video)
     @Published private(set) var hasCamera = true
-    @Published private(set) var fieldOfView: Double = 65      // degrees along the camera's long side (portrait: vertical)
-
+    @Published private(set) var missingUsageText = false
+    @Published private(set) var fieldOfView: Double = 65
     let session = AVCaptureSession()
     private let queue = DispatchQueue(label: "nova.camera")
     private var configured = false
 
     func start() async {
+        guard Bundle.main.object(forInfoDictionaryKey: "NSCameraUsageDescription") != nil else {
+            missingUsageText = true
+            return
+        }
         if authorization == .notDetermined {
             _ = await AVCaptureDevice.requestAccess(for: .video)
             authorization = AVCaptureDevice.authorizationStatus(for: .video)
@@ -74,20 +75,17 @@ struct CameraPreview: UIViewRepresentable {
     func updateUIView(_ uiView: PreviewUIView, context: Context) {}
 }
 
-// MARK: - Projection (pure maths; same direction conventions as the rest of the app)
 
 struct ProjectedObject: Identifiable {
     let object: CelestialObject
     let point: CGPoint
-    let yaw: Double      // degrees to the right of the view's center (negative = left)
-    let pitch: Double    // degrees above the view's center (negative = below)
+    let yaw: Double      
+    let pitch: Double
     let onScreen: Bool
     var id: String { object.id }
 }
 
 enum SkyProjection {
-    /// Pinhole projection of sky positions into the camera view. `fovLong` is the camera's field of view along its long
-    /// side; in portrait with aspect-fill the view's height shows that field and the width shows less.
     static func project(_ items: [(object: CelestialObject, pos: Horizontal)], basis: DeviceBasis,
                         size: CGSize, fovLong: Double) -> [ProjectedObject] {
         guard size.width > 0, size.height > 0 else { return [] }
@@ -96,9 +94,9 @@ enum SkyProjection {
         var out: [ProjectedObject] = []
         for item in items {
             let a = AstronomyEngine.rad(item.pos.azimuth), h = AstronomyEngine.rad(item.pos.altitude)
-            let d = SIMD3<Double>(sin(a) * cos(h), cos(a) * cos(h), sin(h))      // east, north, up
+            let d = SIMD3<Double>(sin(a) * cos(h), cos(a) * cos(h), sin(h))
             let xc = (d * basis.right).sum(), yc = (d * basis.up).sum(), zc = (d * basis.forward).sum()
-            guard zc > 0.02 else { continue }                                      // behind the camera
+            guard zc > 0.02 else { continue }
             let nx = xc / zc / tanH, ny = yc / zc / tanV
             let p = CGPoint(x: size.width / 2 * CGFloat(1 + nx), y: size.height / 2 * CGFloat(1 - ny))
             out.append(ProjectedObject(object: item.object, point: p,
@@ -109,7 +107,6 @@ enum SkyProjection {
     }
 }
 
-// MARK: - Screen
 
 struct SkyCameraView: View {
     @EnvironmentObject var persistence: PersistenceManager
@@ -133,7 +130,7 @@ struct SkyCameraView: View {
             GeometryReader { geo in
                 overlay(size: geo.size)
             }
-            .accessibilityHidden(true)    // visual aid only; the buttons below do the same job in words
+            .accessibilityHidden(true)
 
             VStack(spacing: 10) {
                 notePanel
@@ -158,7 +155,6 @@ struct SkyCameraView: View {
         .onDisappear { camera.stop(); motion.stop(); speech.stop() }
     }
 
-    // MARK: Overlay
 
     @ViewBuilder private func overlay(size: CGSize) -> some View {
         if let basis = motion.basis {
@@ -174,7 +170,6 @@ struct SkyCameraView: View {
                     }
                     .position(p.point)
                 }
-                // Center cross: what "in the middle of the view" means.
                 Image(systemName: "plus").font(.system(size: 30, weight: .light)).foregroundStyle(Theme.textSecondary)
                     .position(x: size.width / 2, y: size.height / 2)
             }
@@ -186,7 +181,10 @@ struct SkyCameraView: View {
             Text("A visual aid for sighted helpers").sectionHeader()
             Text("Labels come from calculation (your location, the time and the phone's orientation), not from analysing the picture, and can be several degrees off. Clouds and buildings can't be detected. Nothing from the camera is saved or analysed.")
                 .font(AppFont.style(.footnote))
-            if camera.authorization == .denied || camera.authorization == .restricted {
+            if camera.missingUsageText {
+                Text("The camera can't start because the app is missing its camera permission text. In Xcode, open the Nova target, then Info, and add Privacy - Camera Usage Description. The buttons below still work.")
+                    .font(AppFont.style(.footnote)).foregroundStyle(Theme.violet)
+            } else if camera.authorization == .denied || camera.authorization == .restricted {
                 Text("Camera access is off. Turn it on in the iPhone Settings app under Nova to see the live view. The buttons below still work.")
                     .font(AppFont.style(.footnote)).foregroundStyle(Theme.violet)
             } else if !demo && !camera.hasCamera {
@@ -225,12 +223,12 @@ struct SkyCameraView: View {
         .accessibilityHint("A sighted helper puts a known object under the cross, then picks it here to correct the compass")
     }
 
-    // MARK: Actions
 
     private func refresh() {
         guard let c = location.coordinate(demo: demo) else { items = []; return }
         let now = Date()
         items = Catalog.locatable.compactMap { o in
+            if o.kind == .star, (o.magnitude ?? 9) > 3.0 { return nil }      
             guard let p = AstronomyEngine.position(of: o, date: now, latitude: c.latitude, longitude: c.longitude), p.altitude > -2 else { return nil }
             return (o, p)
         }
