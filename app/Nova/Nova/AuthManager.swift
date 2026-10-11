@@ -15,13 +15,8 @@ import FirebaseAuth
 import GoogleSignIn
 #endif
 
-/// Optional Google sign-in through Firebase Authentication.
-/// Nova is fully usable without an account; signing in is never required. At the moment it only identifies you
-/// (name and email shown in Settings). Progress still lives on this device. Nothing about your location, sky activity
-/// or discoveries is sent to Firebase.
-///
-/// The Firebase and Google Sign-In packages are optional at build time: without them (or without a GoogleService-Info.plist)
-/// the app compiles and runs normally and the Settings screen says sign-in is not set up.
+// the google sign in is optional
+
 @MainActor
 final class AuthManager: ObservableObject {
     @Published private(set) var isSignedIn = false
@@ -33,7 +28,6 @@ final class AuthManager: ObservableObject {
 
     init() {}
 
-    /// First word of the Google account name, e.g. "Vihaan". Falls back to the start of the email address.
     var firstName: String? {
         if let n = displayName?.split(separator: " ").first, !n.isEmpty { return String(n) }
         if let e = email?.split(separator: "@").first, !e.isEmpty { return String(e) }
@@ -43,7 +37,6 @@ final class AuthManager: ObservableObject {
 #if canImport(FirebaseAuth) && canImport(FirebaseCore) && canImport(GoogleSignIn)
     private var handle: AuthStateDidChangeListenerHandle?
 
-    /// Call once at launch. Safe to call when Firebase isn't configured.
     func configure() {
         if FirebaseApp.app() == nil,
            Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {
@@ -63,19 +56,7 @@ final class AuthManager: ObservableObject {
         email = user?.email
     }
 
-    /// Why sign-in can't work yet, in plain words, or nil if everything needed is in place.
-    var setupProblem: String? {
-        if FirebaseApp.app() == nil {
-            return "Google sign-in isn't set up yet: GoogleService-Info.plist is missing from the app. Download it from the Firebase console and add it to the Nova target."
-        }
-        guard let clientID = FirebaseApp.app()?.options.clientID else {
-            return "Google sign-in isn't set up yet: the Firebase file has no client ID. Turn on Google as a sign-in method in the Firebase console, then download GoogleService-Info.plist again."
-        }
-        let reversed = clientID.split(separator: ".").reversed().joined(separator: ".")
-        let types = Bundle.main.object(forInfoDictionaryKey: "CFBundleURLTypes") as? [[String: Any]] ?? []
-        let hasScheme = types.contains { ($0["CFBundleURLSchemes"] as? [String])?.contains(reversed) == true }
-        if !hasScheme {
-            return "Google sign-in isn't set up yet: add this URL scheme in Xcode (Nova target, Info, URL Types): \(reversed)"
+
         }
         return nil
     }
@@ -110,13 +91,8 @@ final class AuthManager: ObservableObject {
         message = "Signed out."
     }
 
-    /// Hands the redirect URL from the Google sign-in sheet back to the SDK.
     func handle(url: URL) { _ = GIDSignIn.sharedInstance.handle(url) }
 
-#else
-    func configure() { isAvailable = false }
-    var setupProblem: String? {
-        "Google sign-in isn't set up yet: the Firebase and Google Sign-In packages aren't linked to the Nova target. In Xcode, open the Nova target, General, Frameworks, and add FirebaseAuth, FirebaseCore and GoogleSignIn."
     }
     func signInWithGoogle() async { message = setupProblem }
     func signOut() {}
