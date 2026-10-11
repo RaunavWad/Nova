@@ -10,11 +10,9 @@
 
 ## Visit NOVA online
 
-We're planning to launch NOVA on our own website so anyone can explore the sky from their browser.
+**Website:** `https://base2nova.dpdns.org/`
 
-**Website:** `https://YOUR-DOMAIN-HERE` **(Coming soon)**
-
-We'll replace this placeholder with our real domain when NOVA goes live.
+NOVA is live!
 
 ## Why we built NOVA
 
