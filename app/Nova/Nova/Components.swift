@@ -7,8 +7,6 @@
 
 import SwiftUI
 
-// MARK: - Theme
-
 extension Color {
     init(hex: UInt32) {
         self.init(red: Double((hex >> 16) & 0xFF) / 255, green: Double((hex >> 8) & 0xFF) / 255, blue: Double(hex & 0xFF) / 255)
@@ -16,17 +14,16 @@ extension Color {
 }
 
 enum Theme {
-    static let midnight = Color(hex: 0x080E1B)        // main background: deep space navy
-    static let deep = Color(hex: 0x0D1628)            // slight lift used in the background gradient
-    static let panel = Color(hex: 0x131D30)           // cards / panels: raised navy
-    static let accent = Color(hex: 0x68E1FF)          // primary accent: stellar cyan
-    static let violet = Color(hex: 0xB7A4FF)          // secondary accent: soft violet (achievements, highlights)
-    static let text = Color(hex: 0xF4F7FF)            // main text: starlight white
-    static let textSecondary = Color(hex: 0xA8B6CA)   // secondary text: muted blue-gray
-    static let border = Color(hex: 0x2A3A57)          // borders / dividers: slate blue (hex not specified; chosen to suit)
+    static let midnight = Color(hex: 0x080E1B)
+    static let deep = Color(hex: 0x0D1628)
+    static let panel = Color(hex: 0x131D30)
+    static let accent = Color(hex: 0x68E1FF)
+    static let violet = Color(hex: 0xB7A4FF)
+    static let text = Color(hex: 0xF4F7FF)
+    static let textSecondary = Color(hex: 0xA8B6CA)
+    static let border = Color(hex: 0x2A3A57)
 }
 
-// MARK: - Background (decorative only; hidden from VoiceOver)
 
 struct StarfieldBackground: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -55,11 +52,7 @@ struct StarfieldBackground: View {
     }
 }
 
-// MARK: - Controls
 
-// MARK: - Haptics on every press
-
-/// Wraps a button's label so a tick plays the moment a finger goes down. Used by every button style in the app.
 private struct PressHaptic<Content: View>: View {
     @EnvironmentObject var haptics: HapticsManager
     let isPressed: Bool
@@ -70,7 +63,6 @@ private struct PressHaptic<Content: View>: View {
 }
 
 extension View {
-    /// Adds the tap vibration to anything tappable that isn't a styled button (Settings rows, links, toggles).
     func hapticTap() -> some View { modifier(HapticTapModifier()) }
 }
 
@@ -81,7 +73,6 @@ private struct HapticTapModifier: ViewModifier {
     }
 }
 
-/// Large, high-contrast button with a clear label. Fires a haptic tick (the "select" pattern) when pressed.
 struct BigButtonStyle: ButtonStyle {
     var prominent = true
     func makeBody(configuration: Configuration) -> some View {
@@ -108,7 +99,6 @@ struct BigButtonStyle: ButtonStyle {
     }
 }
 
-/// A tappable card with an icon, a title and one line of explanation (home screen, More screen).
 struct FeatureRow: View {
     let icon: String
     let title: String
@@ -151,10 +141,9 @@ struct CardButtonStyle: ButtonStyle {
     }
 }
 
-// MARK: - Liquid Glass (iOS 26+), with a frosted-material fallback on older iPhones
+// this is for liquid glass!!!
 
 extension View {
-    /// Apple's Liquid Glass on iOS 26 and later; a blurred, bordered material before that.
     @ViewBuilder func novaGlass<S: Shape>(in shape: S, interactive: Bool = false) -> some View {
         #if compiler(>=6.2)
         if #available(iOS 26.0, *) {
@@ -168,7 +157,6 @@ extension View {
     }
 }
 
-/// Button with the app's haptic tick built in.
 struct AppButton: View {
     @EnvironmentObject var haptics: HapticsManager
     let title: String
@@ -189,7 +177,6 @@ struct AppButton: View {
     }
 }
 
-/// Repeat / Pause / Stop for narration. Present wherever speech can run long.
 struct SpeechControls: View {
     @EnvironmentObject var speech: SpeechManager
     @EnvironmentObject var audio: AudioManager
@@ -222,8 +209,7 @@ struct Panel<Content: View>: View {
     }
 }
 
-/// Screen scaffold: starfield, scrolling content, readable width, starlight tint.
-/// `showsTitle: false` hides the navigation bar (the home screen draws its own logo header instead).
+
 struct Screen<Content: View>: View {
     let title: String
     var showsTitle = true
@@ -254,7 +240,6 @@ extension View {
     }
 }
 
-// MARK: - Demo controls (clearly simulated)
 
 struct DemoControls: View {
     @EnvironmentObject var motion: MotionManager
