@@ -42,7 +42,7 @@
   }
 
   let clickIndex = 0;
-  let mode = 'off';
+  let mode = 'full';
   let talking = false;
 
   try {

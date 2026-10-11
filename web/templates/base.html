@@ -28,16 +28,25 @@
     <a href="{{ url_for('guide') }}" {% if page=='guide' %}aria-current="page"{% endif %}>How to Listen</a>
   </nav>
   <!-- Same audio button on every page, so the setting stays consistent -->
-  <button id="audioToggle" class="audio-btn" type="button"
-    aria-label="Audio off, select for full audio"
-    data-on-src="{{ url_for('static',filename='images/audio.png') }}"
-    data-half-src="{{ url_for('static',filename='images/audioHalf.png') }}"
-    data-off-src="{{ url_for('static',filename='images/audio off.png') }}"
-    data-click-url="{{ url_for('static',filename='sounds/click_effect.mp3') }}"
-    data-ambient-url="{{ url_for('static',filename='sounds/ambient.mp3') }}">
-    <img id="audioIcon" src="{{ url_for('static',filename='images/audio off.png') }}" alt="" aria-hidden="true">
-    <span id="audioLabel">Audio off</span>
-  </button>
+  <button
+  id="audioToggle"
+  class="audio-btn"
+  type="button"
+  aria-label="Full audio, switch to Voice only"
+  data-on-src="{{ url_for('static', filename='images/audio.png') }}"
+  data-half-src="{{ url_for('static', filename='images/audioHalf.png') }}"
+  data-off-src="{{ url_for('static', filename='images/audio off.png') }}"
+  data-click-url="{{ url_for('static', filename='sounds/click_effect.mp3') }}"
+  data-ambient-url="{{ url_for('static', filename='sounds/ambient.mp3') }}"
+>
+  <img
+    id="audioIcon"
+    src="{{ url_for('static', filename='images/audio.png') }}"
+    alt=""
+    aria-hidden="true"
+  >
+  <span id="audioLabel">Full audio</span>
+</button>
 </header>
 <p id="audioProblem" class="audio-problem" role="status" hidden>
 </p>
