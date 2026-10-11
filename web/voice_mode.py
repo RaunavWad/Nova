@@ -23,8 +23,8 @@ voice_routes = Blueprint('voice_routes', __name__)
 MAX_AUDIO = 8 * 1024 * 1024
 REFUSAL = 'I am NOVA, your astronomy guide — ask me about the universe, stars, planets, or space exploration'
 
-# backup for when the first model only returns a safety label
-BACKUP_MODEL = 'qwen/qwen3-next-80b-a3b-instruct:free'
+# Set NOVA_BACKUP_MODEL in Render if you have a second working model
+# otherwise NOVA tries the main model once more
 
 # tokens stop people sending random text to elevenlabs
 # set NOVA_SIGNING_KEY in .env before a public deployment
@@ -72,13 +72,26 @@ def router_key():
 
 
 def get_error(response, service):
-    # Keep provider details and keys out of the browser
-    print(service, 'api error', response.status_code)
-    if response.status_code in (401, 403):
-        return service + ' denied the request, check the API key'
-    if response.status_code == 429:
-        return service + ' ran into a rate limit or credit limit'
-    return service + ' could not finish the request'
+    # The old message was the same for almost every problem
+    # Keep API keys and provider response bodies out of the browser
+    code = response.status_code
+    print(f'{service} returned HTTP {code}', flush=True)
+
+    if code in (401, 403):
+        return f'{service} rejected the API key — check your Render environment variables'
+    if code == 402:
+        return f'{service} has no available credits — check your account balance'
+    if code == 404:
+        if service == 'OpenRouter':
+            return 'OpenRouter could not find that model — check OPENROUTER_MODEL in Render'
+        return f'{service} could not find that resource — check the voice or endpoint'
+    if code == 429:
+        return f'{service} is rate limited right now — wait a little and try again'
+    if code in (408, 500, 502, 503, 504, 529):
+        return f'{service} is temporarily busy (HTTP {code}) — please try again'
+    if code in (400, 422):
+        return f'{service} rejected the request (HTTP {code}) — check the API settings'
+    return f'{service} returned HTTP {code} — check the Render logs'
 
 
 def clean_field(value, limit):
@@ -113,7 +126,9 @@ def read_chat_content(response, service):
     try:
         body = response.json()
         if body.get('error'):
-            raise RuntimeError(service + ' returned a provider error')
+            # A few free models return an error inside HTTP 200
+            print(f'{service} returned an error in its JSON response', flush=True)
+            raise RuntimeError(service + ' had a model error — please try another model')
         choice = body['choices'][0]
         if choice.get('error') or choice.get('finish_reason') in ('content_filter', 'error'):
             raise RuntimeError(service + ' did not return a normal answer')
@@ -252,16 +267,29 @@ def ask_topic_model(question, history):
 
 
 def router_chat(messages, max_tokens, model, temperature=0):
-    response = requests.post(
-        'https://openrouter.ai/api/v1/chat/completions',
-        headers={
-            'Authorization': 'Bearer ' + router_key(),
-            'Content-Type': 'application/json',
-            'X-OpenRouter-Title': 'NOVA Astronomy'
-        },
-        json={'model': model, 'messages': messages, 'max_tokens': max_tokens, 'temperature': temperature},
-        timeout=(8, 65)
-    )
+    # This is the only place Ask NOVA sends questions to OpenRouter
+    # Don't print the key or the user's question in our server logs
+    try:
+        response = requests.post(
+            'https://openrouter.ai/api/v1/chat/completions',
+            headers={
+                'Authorization': 'Bearer ' + router_key(),
+                'Content-Type': 'application/json',
+                'X-OpenRouter-Title': 'NOVA Astronomy'
+            },
+            json={
+                'model': model,
+                'messages': messages,
+                'max_tokens': max_tokens,
+                'temperature': temperature
+            },
+            timeout=(8, 45)
+        )
+    except requests.Timeout as exc:
+        raise RuntimeError('OpenRouter took too long to answer — try again') from exc
+    except requests.RequestException as exc:
+        raise RuntimeError('Could not connect to OpenRouter — please try again') from exc
+
     if not response.ok:
         raise RuntimeError(get_error(response, 'OpenRouter'))
     return read_chat_content(response, 'OpenRouter')
@@ -348,10 +376,10 @@ def ask_nova():
     if topic is None:
         try:
             topic = ask_topic_model(question, history)
-        except (requests.RequestException, RuntimeError, ValueError) as error:
-            # This is an API error, not proof that the question is off-topic
-            print('NOVA topic check failed:', type(error).__name__)
-            return jsonify(error='Could not check the topic right now — please try again'), 502
+        except (RuntimeError, ValueError) as error:
+            # The astronomy check can fail when OpenRouter is down, too
+            print('NOVA topic check failed:', str(error)[:160], flush=True)
+            return jsonify(error='Could not check the astronomy topic — ' + str(error)), 502
         if topic is None:
             return jsonify(error='Could not verify the topic — try mentioning the star or planet'), 502
         if topic is False:
@@ -381,18 +409,21 @@ def ask_nova():
     messages.append({'role': 'user', 'content': question})
 
     model = os.getenv('OPENROUTER_MODEL', '').strip() or 'openrouter/free'
-    backup = os.getenv('NOVA_BACKUP_MODEL', '').strip() or BACKUP_MODEL
+    backup = os.getenv('NOVA_BACKUP_MODEL', '').strip() or model
     answer = None
     last_problem = ''
 
-    # some free models hand back a safety label, so retry with a clearer request
+    # Free models can be busy or respond with a safety label instead of an answer
+    # Try twice, but never quietly switch to an unknown paid model
     for attempt, picked_model in enumerate((model, backup)):
         try:
             if attempt:
-                new_messages = messages + [{'role': 'user', 'content': (
-                    'Answer the original astronomy question directly with astronomical facts. '
-                    'Do not return safety classifications or labels.'
-                )}]
+                # Keep the real question last, so the model answers that question
+                new_messages = messages.copy()
+                new_messages[0] = {
+                    'role': 'system',
+                    'content': instructions + ' Respond directly with astronomy facts, not a safety label.'
+                }
             else:
                 new_messages = messages
 
@@ -400,16 +431,19 @@ def ask_nova():
             if valid_answer(draft):
                 answer = draft
                 break
-            print('nova got a junk or unrelated answer, trying again')
-        except requests.RequestException as e:
-            last_problem = 'Could not connect to OpenRouter'
-            print('nova connection issue:', type(e).__name__)
-        except RuntimeError as e:
-            last_problem = str(e)
-            print('nova OpenRouter issue:', str(e)[:160])
+            print('NOVA received an unrelated or incomplete response', flush=True)
+            last_problem = 'OpenRouter sent an incomplete answer — try a different model'
+        except RuntimeError as error:
+            last_problem = str(error)
+            print(f'NOVA OpenRouter attempt {attempt + 1} failed: {last_problem}', flush=True)
+            # Retrying with the same key won't solve bad credentials or no credits
+            if any(phrase in last_problem for phrase in (
+                'rejected the API key', 'no available credits'
+            )) or (picked_model == backup and 'could not find that model' in last_problem):
+                break
 
     if not answer:
-        return jsonify(error=last_problem or 'NOVA could not get a proper astronomy answer right now, please try again'), 502
+        return jsonify(error=last_problem or 'NOVA could not get an astronomy answer — try again'), 502
 
     return answer_package(answer, False, history, question)
 
