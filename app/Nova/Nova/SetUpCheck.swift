@@ -8,15 +8,13 @@
 import SwiftUI
 import UIKit
 
-/// A developer aid: looks inside the running app and reports which setup pieces are really there. When a permission
-/// popup never appears, the cause is nearly always a missing Info entry, and this shows it at a glance.
+
 enum SetupCheck {
     struct Item: Identifiable {
         let id: String
         let ok: Bool
         let title: String
         let fix: String
-        /// Missing pieces that stop iOS permission popups from ever appearing.
         var isPermission = false
     }
 
@@ -32,6 +30,13 @@ enum SetupCheck {
                  title: "Camera permission text",
                  fix: "Nova target > Build Settings > search \"camera usage\" > set Privacy - Camera Usage Description. Without it the camera popup never appears.",
                  isPermission: true),
+            Item(id: "mic", ok: info["NSMicrophoneUsageDescription"] != nil,
+                 title: "Microphone permission text (for Ask)",
+                 fix: "Nova target > Build Settings > search \"microphone usage\" > set Privacy - Microphone Usage Description, for example: Nova listens to your spoken questions about space.",
+                 isPermission: true),
+            Item(id: "claude", ok: ClaudeClient.configurationProblem == nil,
+                 title: "Anthropic key for Ask",
+                 fix: ClaudeClient.configurationProblem ?? ""),
             Item(id: "google-plist", ok: Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil,
                  title: "GoogleService-Info.plist",
                  fix: "Drag the downloaded file into the Nova folder in Xcode with the Nova target ticked."),
@@ -41,19 +46,29 @@ enum SetupCheck {
             Item(id: "eleven", ok: ElevenLabsClient.configurationProblem == nil,
                  title: "ElevenLabs Secrets.plist",
                  fix: ElevenLabsClient.configurationProblem ?? ""),
+            Item(id: "sfx", ok: sfxCount == sfxNames.count,
+                 title: "ElevenLabs sound effects (\(sfxCount) of \(sfxNames.count))",
+                 fix: "Optional. Run scripts/generate_sfx.sh on your Mac, then drag the sfx_ mp3 files from Resources/Sounds into the Nova folder with the Nova target ticked. Without them the app uses built-in synthesized sounds."),
             Item(id: "fonts", ok: AppFont.sansName(.regular) != nil && AppFont.serifName != nil,
                  title: "Instrument Sans and Serif fonts",
                  fix: "Drag the .ttf files into the Nova folder in Xcode with the Nova target ticked."),
+            Item(id: "stars", ok: StarCatalog.isLoaded,
+                 title: "Star catalog (stars.json)" + (StarCatalog.isLoaded ? ", \(StarCatalog.count) stars" : ""),
+                 fix: "Optional. Without it Nova knows 16 stars. Run scripts/make_star_catalog.py on the HYG star database and drag the stars.json it makes into the Nova folder with the Nova target ticked."),
             Item(id: "logo", ok: UIImage(named: "NovaLogo") != nil,
                  title: "NovaLogo image",
                  fix: "Assets.xcassets > New Image Set named exactly NovaLogo, then drag the 1024 x 1024 logo in.")
         ]
     }
 
+    private static let sfxNames = ["star", "planet", "moon", "deepSky", "constellation", "aligned", "achievement", "warning", "confirm"]
+    private static var sfxCount: Int {
+        sfxNames.filter { Bundle.main.url(forResource: "sfx_\($0)", withExtension: "mp3") != nil }.count
+    }
+
     static var missingPermissions: [Item] { items.filter { $0.isPermission && !$0.ok } }
 }
 
-/// Shown in Settings: every piece with a tick or a cross, and the fix for each cross.
 struct SetupCheckSection: View {
     var body: some View {
         Section {
