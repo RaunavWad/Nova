@@ -67,9 +67,7 @@ The app uses the phone's location and motion sensors to estimate its direction. 
 - Sky positions are calculated from astronomical data; the map does not account for clouds, buildings, or light pollution
 - Compass and phone orientation measurements can be affected by magnetic interference
 - AI-generated explanations should not be treated as guaranteed scientific facts
-- Accessibility is an ongoing part of the project, and we want to keep testing it with real users
-- The website's Flask development server is for local use, not a production deployment
-
+  
 ## Data and services
 
 Thanks to the projects and services that make NOVA possible:
