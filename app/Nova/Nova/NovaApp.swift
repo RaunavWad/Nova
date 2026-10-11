@@ -33,10 +33,11 @@ struct NovaApp: App {
     @StateObject private var achievements: AchievementManager
     @StateObject private var guidance: GuidanceEngine
     @StateObject private var auth: AuthManager
+    @StateObject private var chat: ChatManager
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
-        AppFont.registerBundledFonts()      // must run before any text is drawn
+        AppFont.registerBundledFonts()
         AppFont.configureAppearance()
         let p = PersistenceManager()
         let l = LocationManager()
@@ -45,7 +46,7 @@ struct NovaApp: App {
         let s = SpeechManager()
         let h = HapticsManager()
         let au = AuthManager()
-        au.configure()                      // no-op unless Firebase is installed and GoogleService-Info.plist is present
+        au.configure()
 
         m.settingsProvider = { p.settings }
         m.declinationProvider = { l.declination }
@@ -64,6 +65,7 @@ struct NovaApp: App {
         _haptics = StateObject(wrappedValue: h)
         let ach = AchievementManager(persistence: p, speech: s, audio: a, haptics: h)
         _auth = StateObject(wrappedValue: au)
+        _chat = StateObject(wrappedValue: ChatManager(speech: s, location: l))
         _achievements = StateObject(wrappedValue: ach)
         _guidance = StateObject(wrappedValue: GuidanceEngine(motion: m, location: l, speech: s, audio: a, haptics: h, persistence: p))
     }
@@ -80,6 +82,7 @@ struct NovaApp: App {
                 .environmentObject(achievements)
                 .environmentObject(guidance)
                 .environmentObject(auth)
+                .environmentObject(chat)
                 .onOpenURL { auth.handle(url: $0) }
                 .preferredColorScheme(.dark)
                 .onAppear {

@@ -7,8 +7,6 @@
 
 import Foundation
 
-/// Result of asking "What am I pointing at?". Never claims optical detection:
-/// it only reports which objects are *expected* in the calculated direction.
 enum MatchResult {
     case confident(CelestialObject, separation: Double)
     case ambiguous([(object: CelestialObject, separation: Double)])
@@ -18,7 +16,6 @@ enum MatchResult {
 }
 
 enum ObjectMatcher {
-    /// Angular size allowance so big objects such as the Moon match sensibly (degrees).
     static let objectExtent = 2.0
 
     static func match(pointing: Horizontal, uncertainty: Double, date: Date, latitude: Double, longitude: Double,
@@ -28,7 +25,7 @@ enum ObjectMatcher {
         var entries: [(object: CelestialObject, separation: Double, pos: Horizontal)] = []
         for o in objects {
             guard let p = AstronomyEngine.position(of: o, date: date, latitude: latitude, longitude: longitude),
-                  p.altitude > -1 else { continue }          // only objects above the horizon
+                  p.altitude > -1 else { continue }
             entries.append((o, AstronomyEngine.separation(pointing, p), p))
         }
         entries.sort { $0.separation < $1.separation }
@@ -48,7 +45,6 @@ enum ObjectMatcher {
         return .ambiguous(close.prefix(3).map { ($0.object, $0.separation) })
     }
 
-    /// Plain-language direction from the current pointing to a target.
     static func relativeDirection(dAzimuth: Double, dAltitude: Double) -> String {
         var parts: [String] = []
         let az = Int((abs(dAzimuth) / 5).rounded()) * 5

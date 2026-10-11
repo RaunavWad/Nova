@@ -8,17 +8,7 @@
 import Foundation
 import CryptoKit
 
-/// Text-to-speech through ElevenLabs, with an on-device cache so each sentence is only fetched once.
-///
-/// Configuration lives in `Resources/Secrets.plist` (git-ignored; copy `Secrets.plist.example`):
-///   ELEVENLABS_API_KEY, ELEVENLABS_VOICE_ID, optional ELEVENLABS_MODEL_ID (default eleven_flash_v2_5, the low-latency model).
-/// If the file or key is missing the client reports `isConfigured == false` and the app uses the built-in iPhone voice.
-/// `ElevenLabsClient.configurationProblem` says in plain words what is missing, and `check()` makes one real test call
-/// and reports exactly what ElevenLabs answered (shown in Settings > Speech).
-///
-/// SECURITY: a key inside an app bundle can be extracted by anyone who has the app. That is acceptable for a private
-/// demo with a restricted, spend-limited key. For a public release, put the key on a server (for example a Firebase
-/// Cloud Function that checks the user's Firebase sign-in) and have the app call that instead.
+
 actor ElevenLabsClient {
     static let shared = ElevenLabsClient()
 
@@ -50,7 +40,6 @@ actor ElevenLabsClient {
         try? FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
     }
 
-    // MARK: Configuration
 
     private static func secrets() -> [String: Any]? {
         guard let url = Bundle.main.url(forResource: "Secrets", withExtension: "plist") else { return nil }
@@ -68,7 +57,6 @@ actor ElevenLabsClient {
         return Config(apiKey: key, voiceID: voice, modelID: clean(dict["ELEVENLABS_MODEL_ID"]) ?? "eleven_flash_v2_5")
     }
 
-    /// Plain-language reason premium voice can't start, or nil if the key and voice are in place.
     nonisolated static var configurationProblem: String? {
         guard let dict = secrets() else {
             return "Secrets.plist isn't inside the app. In Xcode, drag Secrets.plist into the Nova folder and tick the Nova target (it must also appear under Build Phases > Copy Bundle Resources)."
@@ -78,9 +66,6 @@ actor ElevenLabsClient {
         return nil
     }
 
-    // MARK: Speech
-
-    /// MP3 data for `text`: from the cache if we have it, otherwise fetched (and cached).
     func speech(for text: String) async throws -> Data {
         guard let config else { throw ClientError.notConfigured }
         let clipped = String(text.prefix(4500))
@@ -106,7 +91,6 @@ actor ElevenLabsClient {
         return data
     }
 
-    /// True if this exact line is already saved on the iPhone (so it can be played instantly and offline).
     nonisolated func isCached(_ text: String) -> Bool {
         guard let config else { return false }
         let clipped = String(text.prefix(4500))
@@ -114,10 +98,8 @@ actor ElevenLabsClient {
         return FileManager.default.fileExists(atPath: file.path)
     }
 
-    /// Fetch and save a line in the background so it is ready next time. Errors are ignored.
     func prefetch(_ text: String) async { _ = try? await speech(for: text) }
 
-    /// One real round trip, bypassing the cache, so Settings can say exactly what is wrong (or that it works).
     func check() async -> String {
         guard config != nil else { return Self.configurationProblem ?? "Premium voice is not set up." }
         do {
@@ -132,14 +114,43 @@ actor ElevenLabsClient {
         }
     }
 
-    /// Short explanation of the last failure, for Settings.
     nonisolated static func describe(_ error: Error) -> String {
         if let e = error as? ClientError { return e.errorDescription ?? "Premium voice failed." }
         if let e = error as? URLError { return "Couldn't reach ElevenLabs (\(e.localizedDescription))." }
         return "Premium voice failed: \(error.localizedDescription)"
     }
 
-    // MARK: Helpers
+    func transcribe(fileURL: URL) async throws -> String {
+        guard let config else { throw ClientError.notConfigured }
+        let audio = try Data(contentsOf: fileURL)
+        guard audio.count > 1500 else { throw ClientError.api(status: 0, message: "That recording was too short to hear.") }
+        let boundary = "nova-" + UUID().uuidString
+        var body = Data()
+        func field(_ name: String, _ value: String) {
+            body.append("--\(boundary)\r\nContent-Disposition: form-data; name=\"\(name)\"\r\n\r\n\(value)\r\n".data(using: .utf8)!)
+        }
+        field("model_id", Self.secretValue("ELEVENLABS_STT_MODEL_ID") ?? "scribe_v1")
+        body.append("--\(boundary)\r\nContent-Disposition: form-data; name=\"file\"; filename=\"question.m4a\"\r\nContent-Type: audio/mp4\r\n\r\n".data(using: .utf8)!)
+        body.append(audio)
+        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+
+        var req = URLRequest(url: URL(string: "https://api.elevenlabs.io/v1/speech-to-text")!, timeoutInterval: 45)
+        req.httpMethod = "POST"
+        req.setValue(config.apiKey, forHTTPHeaderField: "xi-api-key")
+        req.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        req.httpBody = body
+
+        let (data, response) = try await URLSession.shared.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? -1
+        guard status == 200 else { throw ClientError.api(status: status, message: Self.apiMessage(from: data)) }
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let text = (json["text"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else {
+            throw ClientError.api(status: 0, message: "I couldn't hear any words in that recording.")
+        }
+        return text
+    }
+
+    nonisolated static func secretValue(_ key: String) -> String? { clean(secrets()?[key]) }
 
     private static func apiMessage(from data: Data) -> String {
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return "" }
@@ -151,10 +162,8 @@ actor ElevenLabsClient {
 
     nonisolated static func explain(status: Int, message: String) -> String {
         let extra = message.isEmpty ? "" : " ElevenLabs said: \(message)"
+        if status == 0 { return message }
         switch status {
-        case 401: return "ElevenLabs rejected the API key (401). Copy the key again into Secrets.plist, or check that the key has Text to Speech permission." + extra
-        case 402: return "ElevenLabs says this voice or feature needs a paid plan (402). Pick a voice from your own Voices page, or upgrade." + extra
-        case 404: return "ElevenLabs doesn't know that voice ID (404). Check ELEVENLABS_VOICE_ID in Secrets.plist." + extra
         case 422: return "ElevenLabs rejected the request (422)." + extra
         case 429: return "ElevenLabs says too many requests or no credits left (429)." + extra
         default: return "ElevenLabs returned error \(status)." + extra

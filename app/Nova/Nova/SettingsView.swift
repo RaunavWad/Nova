@@ -27,6 +27,9 @@ struct SettingsView: View {
                     ForEach(Verbosity.allCases) { Text($0.label).tag($0) }
                 }
                 Toggle("Use VoiceOver for announcements when it is on", isOn: $persistence.settings.useVoiceOverAnnouncements)
+                Toggle("Spoken hello when Nova opens", isOn: Binding(
+                    get: { persistence.settings.speaksGreeting },
+                    set: { persistence.settings.greetingEnabled = $0 }))
                 Toggle("Premium voice (ElevenLabs)", isOn: $persistence.settings.premiumVoice)
                     .disabled(!speech.premiumAvailable)
                 Text(speech.premiumAvailable
@@ -98,7 +101,7 @@ struct SettingsView: View {
             }
 
             Section {
-                Text("Your location is used only on this iPhone to calculate where objects are. Camera pictures are shown live and are never saved or analysed. Progress is saved only on this device. If you choose to sign in, Google and Firebase receive only your sign-in details.")
+                Text("Your location is used only on this iPhone to calculate where objects are. Camera pictures are shown live and are never saved or analysed. Your town and state are looked up with Apple and shown on the home screen. In the Ask tab, your spoken question goes to ElevenLabs to become text, and the text, your town name and the time go to Anthropic (Claude) to be answered; the recording is deleted straight away. Progress is saved only on this device. If you choose to sign in, Google and Firebase receive only your sign-in details.")
                 Text(location.statusDescription)
                 Button("Reset my progress", role: .destructive) { confirmReset = true }.hapticTap()
             } header: { Text("Privacy") }
@@ -136,7 +139,6 @@ struct SettingsView: View {
     }
 }
 
-// MARK: - Haptic language (documented and playable)
 
 struct HapticLanguageView: View {
     @EnvironmentObject var haptics: HapticsManager

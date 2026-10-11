@@ -8,8 +8,7 @@
 
 import SwiftUI
 
-/// Shown after the launch animation when nobody is signed in. Signing in is optional: "Continue without signing in"
-/// always works, so blind users and anyone without a Google account are never blocked.
+
 struct LoginView: View {
     var onSkip: () -> Void
 

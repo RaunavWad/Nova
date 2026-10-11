@@ -9,12 +9,6 @@ import SwiftUI
 import UIKit
 import CoreText
 
-/// Instrument Sans (body/UI) and Instrument Serif (display). Both are SIL Open Font License fonts from Google Fonts.
-///
-/// The font files are found and registered AT RUNTIME: `registerBundledFonts()` scans the app bundle for any .ttf/.otf file,
-/// so it works no matter how you added them to Xcode and needs no Info.plist entry. It reads each font's real internal
-/// name, so file names don't matter. If the fonts are missing, text falls back to the system font (serif titles fall back
-/// to Apple's serif), and Settings > Fonts says what was found. Sizes follow Dynamic Type.
 enum AppFont {
     enum Face { case sans, serif }
 
@@ -39,8 +33,6 @@ enum AppFont {
         available = found
     }
 
-    // MARK: Names
-
     private static func first(of names: [String]) -> String? { names.first { available.contains($0) } }
 
     static var serifName: String? { first(of: ["InstrumentSerif-Regular"]) }
@@ -54,14 +46,11 @@ enum AppFont {
         }
     }
 
-    /// Plain-language report for Settings.
     static var status: String {
         let sans = sansName(.regular) != nil ? "Instrument Sans: loaded." : "Instrument Sans: not found, using the system font."
         let serif = serifName != nil ? "Instrument Serif: loaded." : "Instrument Serif: not found, using the system serif."
         return sans + " " + serif + (available.isEmpty ? " No font files were found in the app. Check that they are added to the Nova target." : "")
     }
-
-    // MARK: Sizes
 
     static func size(_ style: Font.TextStyle) -> CGFloat {
         switch style {
@@ -80,8 +69,6 @@ enum AppFont {
         }
     }
 
-    // MARK: Fonts
-
     /// Main entry point: `.font(AppFont.style(.headline, .semibold))`.
     static func style(_ style: Font.TextStyle, _ weight: Font.Weight = .regular, face: Face = .sans) -> Font {
         let pt = size(style)
@@ -98,13 +85,11 @@ enum AppFont {
 
     static func display(_ style: Font.TextStyle = .largeTitle) -> Font { self.style(style, face: .serif) }
 
-    /// A serif at an exact point size that still scales with Dynamic Type (for the splash and login title).
     static func serif(size: CGFloat, relativeTo style: Font.TextStyle = .largeTitle) -> Font {
         if let n = serifName { return .custom(n, size: size, relativeTo: style) }
         return .system(size: size, design: .serif)
     }
 
-    // MARK: Navigation bar (UIKit)
 
     static func configureAppearance() {
         func scaled(_ name: String?, _ style: UIFont.TextStyle, _ pt: CGFloat) -> UIFont? {

@@ -74,7 +74,6 @@ struct IdentifyView: View {
             .buttonStyle(BigButtonStyle(prominent: false))
     }
 
-    // MARK: Identify
 
     private func fail(_ text: String) {
         outcome = .message(text)

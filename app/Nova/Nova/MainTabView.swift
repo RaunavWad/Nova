@@ -9,24 +9,20 @@ import SwiftUI
 import UIKit
 import Combine
 
-enum AppTab: Hashable { case home, explore, find, identify, more }
+enum AppTab: Hashable { case home, explore, find, ask, more }
 
-/// Lets any screen jump to a tab (the home screen's big buttons use it).
 @MainActor
 final class AppRouter: ObservableObject {
     let objectWillChange = ObservableObjectPublisher()
     var tab: AppTab = .home { willSet { objectWillChange.send() } }
 }
 
-/// The bottom tab bar. It is the system TabView, so on iOS 26 and later it is Apple's Liquid Glass bar, floating over the
-/// sky, and it works with VoiceOver, Dynamic Type and Voice Control with no extra effort. On earlier iPhones it falls
-/// back to a frosted dark bar.
+
 struct MainTabView: View {
     @StateObject private var router = AppRouter()
     @EnvironmentObject var haptics: HapticsManager
 
     init() {
-        // Before iOS 26 give the bar a dark frosted look. On iOS 26+ leave the system's glass untouched.
         if #unavailable(iOS 26.0) {
             let a = UITabBarAppearance()
             a.configureWithDefaultBackground()
@@ -57,9 +53,9 @@ struct MainTabView: View {
                 .tabItem { Label("Find", systemImage: "scope") }
                 .tag(AppTab.find)
 
-            NavigationStack { IdentifyView() }
-                .tabItem { Label("Identify", systemImage: "questionmark.circle.fill") }
-                .tag(AppTab.identify)
+            NavigationStack { AskView() }
+                .tabItem { Label("Ask", systemImage: "waveform.circle.fill") }
+                .tag(AppTab.ask)
 
             NavigationStack { MoreView() }
                 .tabItem { Label("More", systemImage: "ellipsis.circle.fill") }
@@ -71,12 +67,17 @@ struct MainTabView: View {
     }
 }
 
-/// Everything that isn't one of the four main tools.
 struct MoreView: View {
     @EnvironmentObject var speech: SpeechManager
 
     var body: some View {
         Screen(title: "More") {
+            NavigationLink { IdentifyView() } label: {
+                FeatureRow(icon: "questionmark.circle.fill", title: "What am I pointing at?",
+                           subtitle: "Point at the sky and hear what should be there")
+            }
+            .buttonStyle(CardButtonStyle())
+
             NavigationLink { SkyCameraView() } label: {
                 FeatureRow(icon: "camera.viewfinder", title: "Sky Camera",
                            subtitle: "Live camera with labels, for sighted helpers")

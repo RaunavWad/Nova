@@ -10,23 +10,21 @@ import Foundation
 @preconcurrency import AVFoundation
 import UIKit
 
-/// Spoken output. Uses AVSpeechSynthesizer for narration. If VoiceOver is running and the user prefers it,
-/// short status messages are posted as VoiceOver announcements instead so the two voices never talk over each other.
 @MainActor
 final class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate, AVAudioPlayerDelegate {
-    let objectWillChange = ObservableObjectPublisher()   // explicit, so strict-import Xcode versions accept the conformance
+    let objectWillChange = ObservableObjectPublisher()
     @Published private(set) var isSpeaking = false
     @Published private(set) var isPaused = false
     @Published private(set) var lastSpoken: String = ""
-    @Published private(set) var premiumStatus: String? = nil   // last result from ElevenLabs, shown in Settings
+    @Published private(set) var premiumStatus: String? = nil
 
     var settingsProvider: @MainActor () -> AppSettings = { AppSettings() }
     weak var audio: AudioManager?
 
     private let synth = AVSpeechSynthesizer()
     private var lastGuidanceTime = Date.distantPast
-    private var pending: [String] = []              // premium lines waiting their turn
-    private var player: AVAudioPlayer?              // premium (ElevenLabs) narration
+    private var pending: [String] = []             
+    private var player: AVAudioPlayer?
     private var narrationTask: Task<Void, Never>?
 
     var premiumAvailable: Bool { ElevenLabsClient.shared.isConfigured }
@@ -38,11 +36,7 @@ final class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelega
         synth.delegate = self
     }
 
-    // MARK: Speaking
-
-    /// Speak a message in Nova's voice: ElevenLabs when it is set up and switched on (cached after the first time),
-    /// otherwise, or if ElevenLabs is slow, offline or errors, the built-in iPhone voice.
-    /// `interrupt` replaces whatever is being said; otherwise the line waits its turn.
+   
     func speak(_ text: String, interrupt: Bool = true, remember: Bool = true) {
         if remember { lastSpoken = text }
         guard usePremium else { speakSystem(text, interrupt: interrupt); return }
@@ -56,7 +50,6 @@ final class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelega
         }
     }
 
-    /// Short status line. VoiceOver users get a VoiceOver announcement (if they prefer that), so the two voices never overlap.
     func announce(_ text: String) {
         let s = settingsProvider()
         lastSpoken = text
@@ -67,7 +60,6 @@ final class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelega
         }
     }
 
-    /// Longer narration (descriptions, results, greeting): same voice rules as `speak`, but it always replaces what was being said.
     func narrate(_ text: String) {
         lastSpoken = text
         let s = settingsProvider()
@@ -78,7 +70,6 @@ final class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelega
         speak(text, interrupt: true, remember: false)
     }
 
-    /// Makes one real call to ElevenLabs and reports the result in `premiumStatus` (used by Settings > Test premium voice).
     func checkPremium() async {
         premiumStatus = "Checking..."
         let result = await ElevenLabsClient.shared.check()
@@ -86,7 +77,6 @@ final class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelega
         if result == "Premium voice is working." { narrate("Nova premium voice is working.") }
     }
 
-    // MARK: Built-in voice
 
     private func speakSystem(_ text: String, interrupt: Bool) {
         let s = settingsProvider()
@@ -99,8 +89,8 @@ final class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelega
         synth.speak(u)
     }
 
-    // MARK: Premium voice
-
+// this is the nice elevenlabs voice :D!!
+    
     private func startPremium(_ text: String) {
         cancelPremium()
         synth.stopSpeaking(at: .immediate)
@@ -113,7 +103,7 @@ final class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelega
             } catch {
                 guard !Task.isCancelled, let self else { return }
                 self.narrationTask = nil
-                self.premiumStatus = ElevenLabsClient.describe(error)   // so Settings can say why the built-in voice was used
+                self.premiumStatus = ElevenLabsClient.describe(error)
                 self.speakSystem(text, interrupt: true)
             }
         }
@@ -126,7 +116,7 @@ final class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelega
             p.delegate = self
             p.volume = Float(s.narrationVolume)
             p.enableRate = true
-            p.rate = Float(0.7 + 0.6 * s.speechRate)      // speech-speed setting: 0.5 = normal speed
+            p.rate = Float(0.7 + 0.6 * s.speechRate)
             p.prepareToPlay()
             player = p
             isPaused = false
@@ -144,15 +134,11 @@ final class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelega
         player?.stop(); player = nil
     }
 
-    /// Rate-limited speech for live guidance so users are never flooded. Guidance has to be instant, so the premium voice
-    /// is used only for lines already saved on this iPhone; a new line is spoken by the built-in voice this time and saved
-    /// in the background, so the next time it is in the premium voice.
     func speakGuidance(_ text: String, force: Bool = false) {
         let s = settingsProvider()
-        guard s.guidanceStyle != .hapticsOnly || force else { return }   // forced = problems/celebrations, always spoken
+        guard s.guidanceStyle != .hapticsOnly || force else { return }
         guard force || Date().timeIntervalSince(lastGuidanceTime) >= s.guidanceSpeechInterval else { return }
         lastGuidanceTime = Date()
-        // Never interrupt a message that is already being spoken (unless forced).
         if isBusy && !force { return }
         if usePremium {
             if ElevenLabsClient.shared.isCached(text) {
@@ -185,7 +171,6 @@ final class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelega
         else if synth.continueSpeaking() { isPaused = false }
     }
 
-    // MARK: Descriptions
 
     func spokenName(_ o: CelestialObject) -> String { o.spokenName }
 
@@ -205,7 +190,6 @@ final class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelega
         return t
     }
 
-    // MARK: AVAudioPlayerDelegate
     nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         Task { @MainActor in
             self.player = nil
@@ -214,7 +198,6 @@ final class SpeechManager: NSObject, ObservableObject, AVSpeechSynthesizerDelega
         }
     }
 
-    // MARK: AVSpeechSynthesizerDelegate
     nonisolated func speechSynthesizer(_ s: AVSpeechSynthesizer, didStart u: AVSpeechUtterance) {
         Task { @MainActor in self.isSpeaking = true; self.audio?.setNarrationActive(true) }
     }

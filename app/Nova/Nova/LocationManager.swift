@@ -2,19 +2,21 @@ import Foundation
 import CoreLocation
 import Combine
 
-/// Location is used only to compute where objects are in *your* sky. Reduced accuracy (kilometers) is plenty
-/// (1 km on the ground changes star positions by ~0.01°) and is better for privacy. Nothing leaves the device.
 @MainActor
 final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var location: CLLocation?
     @Published var authorization: CLAuthorizationStatus
     @Published var declination: Double?          // true minus magnetic heading, degrees (east positive)
     @Published var headingNeedsCalibration = false
+    @Published var missingUsageText = false      // true if the app's Info settings lack the location explanation
+    @Published private(set) var placeName: String?        // e.g. "Edison, New Jersey" (display)
+    @Published private(set) var spokenPlaceName: String?  // same, spelled out for speech
 
-    /// Fixed location used only in Demo mode (clearly announced as such).
     static let demoCoordinate = CLLocationCoordinate2D(latitude: 40.7128, longitude: -74.0060)
 
     private let manager = CLLocationManager()
+    private let geocoder = CLGeocoder()
+    private var lastGeocoded: CLLocation?
 
     override init() {
         authorization = manager.authorizationStatus
@@ -29,7 +31,13 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
     var isDenied: Bool { authorization == .denied || authorization == .restricted }
 
     func start() {
-        if authorization == .notDetermined { manager.requestWhenInUseAuthorization() }
+        if authorization == .notDetermined {
+            guard Bundle.main.object(forInfoDictionaryKey: "NSLocationWhenInUseUsageDescription") != nil else {
+                missingUsageText = true
+                return
+            }
+            manager.requestWhenInUseAuthorization()
+        }
         if isAuthorized {
             manager.startUpdatingLocation()
             if CLLocationManager.headingAvailable() { manager.startUpdatingHeading() }
@@ -41,13 +49,15 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
         manager.stopUpdatingHeading()
     }
 
-    /// Coordinates to use for astronomy. nil means "no valid location".
     func coordinate(demo: Bool) -> CLLocationCoordinate2D? {
         if demo { return Self.demoCoordinate }
         return location?.coordinate
     }
 
     var statusDescription: String {
+        if missingUsageText {
+            return "Location can't be requested because the app is missing its location permission text. In Xcode, open the Nova target, then Info, and add Privacy - Location When In Use Usage Description."
+        }
         switch authorization {
         case .notDetermined: return "Location permission has not been requested yet."
         case .denied: return "Location access is turned off. Open the Settings app, then Nova, then Location, and choose While Using the App."
@@ -56,7 +66,38 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
         }
     }
 
-    // MARK: CLLocationManagerDelegate
+
+    private func updatePlaceName(for loc: CLLocation) {
+        if let last = lastGeocoded, loc.distance(from: last) < 5_000, placeName != nil { return }
+        guard !geocoder.isGeocoding else { return }
+        lastGeocoded = loc
+        geocoder.reverseGeocodeLocation(loc) { [weak self] marks, _ in
+            guard let m = marks?.first else { return }
+            let town = m.locality ?? m.subAdministrativeArea ?? m.name
+            let region = m.administrativeArea
+            Task { @MainActor in
+                guard let self else { return }
+                let full = region.flatMap { Self.usStates[$0] } ?? region
+                let parts = [town, full].compactMap { $0 }.filter { !$0.isEmpty }
+                guard !parts.isEmpty else { return }
+                self.placeName = parts.joined(separator: ", ")
+                self.spokenPlaceName = self.placeName
+            }
+        }
+    }
+
+    private static let usStates: [String: String] = [
+        "AL": "Alabama", "AK": "Alaska", "AZ": "Arizona", "AR": "Arkansas", "CA": "California", "CO": "Colorado",
+        "CT": "Connecticut", "DE": "Delaware", "DC": "Washington, D.C.", "FL": "Florida", "GA": "Georgia", "HI": "Hawaii",
+        "ID": "Idaho", "IL": "Illinois", "IN": "Indiana", "IA": "Iowa", "KS": "Kansas", "KY": "Kentucky", "LA": "Louisiana",
+        "ME": "Maine", "MD": "Maryland", "MA": "Massachusetts", "MI": "Michigan", "MN": "Minnesota", "MS": "Mississippi",
+        "MO": "Missouri", "MT": "Montana", "NE": "Nebraska", "NV": "Nevada", "NH": "New Hampshire", "NJ": "New Jersey",
+        "NM": "New Mexico", "NY": "New York", "NC": "North Carolina", "ND": "North Dakota", "OH": "Ohio", "OK": "Oklahoma",
+        "OR": "Oregon", "PA": "Pennsylvania", "RI": "Rhode Island", "SC": "South Carolina", "SD": "South Dakota",
+        "TN": "Tennessee", "TX": "Texas", "UT": "Utah", "VT": "Vermont", "VA": "Virginia", "WA": "Washington",
+        "WV": "West Virginia", "WI": "Wisconsin", "WY": "Wyoming"
+    ]
+
     nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         Task { @MainActor in
             self.authorization = manager.authorizationStatus
@@ -65,7 +106,10 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
     }
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let last = locations.last else { return }
-        Task { @MainActor in self.location = last }
+        Task { @MainActor in
+            self.location = last
+            self.updatePlaceName(for: last)
+        }
     }
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) {
         guard newHeading.headingAccuracy >= 0, newHeading.trueHeading >= 0 else { return }

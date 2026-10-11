@@ -10,19 +10,18 @@ import Foundation
 import CoreHaptics
 import UIKit
 
-/// The Nova haptic language. Every pattern has a spoken/text equivalent elsewhere in the app;
-/// haptics are never the only channel for errors, achievements or instructions.
+
 enum HapticPattern: String, CaseIterable {
-    case select          // one short tick: a control was activated
-    case searching       // one soft, medium pulse: keep sweeping (target is far or direction unreliable)
-    case turnRight       // one firm tap: turn right
-    case turnLeft        // two quick light taps: turn left
-    case tiltUp          // rising buzz: raise the phone
-    case tiltDown        // falling buzz: lower the phone
-    case aligned         // distinct double thump: you are on target
-    case discovery       // celebratory rising flurry: new discovery
-    case achievement     // longer flourish: achievement unlocked
-    case warning         // three sharp, dull taps: calibration or location problem
+    case select
+    case searching
+    case turnRight
+    case turnLeft
+    case tiltUp
+    case tiltDown
+    case aligned
+    case discovery
+    case achievement
+    case warning
 
     var meaning: String {
         switch self {
@@ -126,7 +125,6 @@ final class HapticsManager: ObservableObject {
         } catch { return false }
     }
 
-    // MARK: UIKit fallback (strength is fixed by the system on these devices)
     private func playFallback(_ p: HapticPattern) {
         let impact = UIImpactFeedbackGenerator(style: .medium)
         let notify = UINotificationFeedbackGenerator()

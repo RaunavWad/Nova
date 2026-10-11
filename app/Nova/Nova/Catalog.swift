@@ -29,15 +29,15 @@ enum EphemerisSource: Hashable {
 struct CelestialObject: Identifiable, Hashable {
     let id: String
     let name: String
-    let spokenName: String        // respelling used for text-to-speech
+    let spokenName: String
     let kind: ObjectKind
-    let source: EphemerisSource?  // nil = educational only; cannot be located with phone sensors
+    let source: EphemerisSource?
     let magnitude: Double?
     let distance: String
     let constellation: String
     let short: String
     let deeper: String
-    let story: String?            // mythology / culture, with origin named
+    let story: String?
     let didYouKnow: String
 
     var isLocatable: Bool { source != nil }
@@ -51,8 +51,7 @@ enum Catalog {
                         story: story, didYouKnow: fact)
     }
 
-    // RA/Dec: J2000, degrees. Magnitudes: approximate visual.
-    static let all: [CelestialObject] = [
+    static let curated: [CelestialObject] = [
         CelestialObject(id: "moon", name: "the Moon", spokenName: "the Moon", kind: .moon, source: .moon, magnitude: -12.7,
                         distance: "about 384,000 kilometers, varying by roughly 5 percent through its orbit", constellation: "varies night to night",
                         short: "Earth's only natural satellite, and the brightest thing in the night sky.",
@@ -71,6 +70,36 @@ enum Catalog {
                         deeper: "Saturn's rings are mostly water ice, from dust grains to house-sized chunks, spread over a span wider than the distance from Earth to the Moon yet extremely thin. Saturn is less dense than water.",
                         story: "Named by the Romans for Saturn, god of agriculture, whose festival Saturnalia was celebrated in December.",
                         didYouKnow: "Saturn's rings look different from Earth over the years because we see them from changing angles."),
+        CelestialObject(id: "mercury", name: "Mercury", spokenName: "Mercury", kind: .planet, source: .planet(.mercury), magnitude: -0.4,
+                        distance: "between about 77 and 220 million kilometers from Earth", constellation: "varies, and never far from the Sun",
+                        short: "The smallest planet and the closest to the Sun, seen only briefly in twilight.",
+                        deeper: "Mercury races around the Sun in just 88 days. It has almost no atmosphere, so its surface swings from about 430 degrees Celsius in daylight to about minus 180 at night. Because it never strays far from the Sun, it is only visible low on the horizon shortly after sunset or before sunrise, and only on some weeks of the year.",
+                        story: "The Romans named it for their swift messenger god, because it moves across the sky faster than any other planet.",
+                        didYouKnow: "One day on Mercury, from one sunrise to the next, lasts about 176 Earth days."),
+        CelestialObject(id: "venus", name: "Venus", spokenName: "VEE-nus", kind: .planet, source: .planet(.venus), magnitude: -4.4,
+                        distance: "between about 40 and 260 million kilometers from Earth", constellation: "varies, and never far from the Sun",
+                        short: "The brightest planet, a dazzling white light in the dawn or dusk sky.",
+                        deeper: "Venus is wrapped in thick clouds of carbon dioxide that trap heat, making it the hottest planet, about 465 degrees Celsius at the surface. It spins backwards and very slowly, so its day is longer than its year. It is bright because its clouds reflect most of the sunlight that reaches them.",
+                        story: "Named by the Romans for their goddess of love and beauty. Ancient Greeks called it by two names, as the morning star and the evening star, before realizing they were one world.",
+                        didYouKnow: "After the Sun and Moon, Venus is the brightest thing in the sky, and can even cast faint shadows in very dark places."),
+        CelestialObject(id: "mars", name: "Mars", spokenName: "Marz", kind: .planet, source: .planet(.mars), magnitude: 0.7,
+                        distance: "between about 55 and 400 million kilometers from Earth", constellation: "varies over the years",
+                        short: "The red planet, shining with a steady orange-red light.",
+                        deeper: "Mars gets its color from rusty iron-rich dust. It has the tallest volcano in the solar system, Olympus Mons, about two and a half times the height of Mount Everest, and a canyon system that would stretch across the width of the United States. Robots have explored its surface for decades. It has two tiny moons, Phobos and Deimos.",
+                        story: "The Romans named it for their god of war, perhaps because of its blood-red color.",
+                        didYouKnow: "A day on Mars is only about 40 minutes longer than a day on Earth."),
+        CelestialObject(id: "uranus", name: "Uranus", spokenName: "YOOR-uh-nus", kind: .planet, source: .planet(.uranus), magnitude: 5.7,
+                        distance: "between about 2.6 and 3.2 billion kilometers from Earth", constellation: "varies very slowly, over decades",
+                        short: "A pale blue-green ice giant, just at the limit of naked-eye visibility.",
+                        deeper: "Uranus is tipped over on its side, so it rolls around the Sun like a ball. Methane in its atmosphere gives it its blue-green color. It takes 84 years to orbit the Sun. It is so faint that even under dark skies you could not tell it from a star without a chart. Nova can point you in its direction, but you will not see or hear anything distinctive.",
+                        story: "Discovered in 1781 by William Herschel, the first planet found with a telescope. It is named for the Greek god of the sky.",
+                        didYouKnow: "Uranus has been seen many times before 1781, but people took it for a star."),
+        CelestialObject(id: "neptune", name: "Neptune", spokenName: "NEP-toon", kind: .planet, source: .planet(.neptune), magnitude: 7.8,
+                        distance: "between about 4.3 and 4.7 billion kilometers from Earth", constellation: "varies very slowly, over decades",
+                        short: "The most distant planet, a deep blue ice giant too faint to see without a telescope.",
+                        deeper: "Neptune has the fastest winds of any planet, reaching about 2,000 kilometers per hour. It takes about 165 years to orbit the Sun. It is far too dim for the naked eye or even most binoculars to find without help. Nova can point you in its direction, but nothing would be visible there.",
+                        story: "Neptune was found in 1846 after mathematicians, working from small wobbles in Uranus's orbit, predicted where it must be. It is named for the Roman god of the sea.",
+                        didYouKnow: "Neptune completed its first full orbit since its discovery in 2011."),
         star("sirius", "Sirius", "SEER-ee-us", ra: 101.287, dec: -16.716, mag: -1.46, dist: "about 8.6 light-years", con: "Canis Major",
              short: "The brightest star in the night sky.",
              deeper: "Sirius is really two stars: a bright white main star and a faint, dense white dwarf companion. It looks so bright mostly because it is one of our nearest neighbors.",
@@ -191,6 +220,8 @@ enum Catalog {
                         story: "In Greek myth Cassiopeia was a boastful queen, doomed to circle the pole of the sky.",
                         didYouKnow: "When the Big Dipper is low, Cassiopeia is high, and vice versa.")
     ]
+
+    static let all: [CelestialObject] = curated + StarCatalog.objects(excluding: curated)
 
     static var locatable: [CelestialObject] { all.filter { $0.isLocatable } }
     static func object(id: String) -> CelestialObject? { all.first { $0.id == id } }

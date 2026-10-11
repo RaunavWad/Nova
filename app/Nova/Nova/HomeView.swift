@@ -21,16 +21,56 @@ struct HomeView: View {
 
     private var greeting: String { auth.firstName.map { "Hi, \($0)!" } ?? "Hi there!" }
 
+    private var placeLine: String? {
+        persistence.settings.demoMode ? nil : location.placeName
+    }
+
     private var moonLine: String {
         let p = AstronomyEngine.moonPhase(date: Date())
         return "\(p.name.capitalized), about \(Int((p.fraction * 100).rounded())) percent lit"
     }
 
+
+    private static var greetedThisLaunch = false
+    private static var greetScheduled = false
+
+    private func greetIfNeeded() {
+        guard !Self.greetedThisLaunch, !Self.greetScheduled else { return }
+        Self.greetScheduled = true
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_600_000_000)
+            guard !Self.greetedThisLaunch else { return }
+            Self.greetedThisLaunch = true
+            let first = !persistence.settings.hasHeardIntro
+            guard persistence.settings.speaksGreeting || first else { return }
+            persistence.settings.hasHeardIntro = true
+            speech.narrate(spokenGreeting + (first ? " " + Self.introText : ""))
+        }
+    }
+
+    private var spokenGreeting: String {
+        let hour = Calendar.current.component(.hour, from: Date())
+        let part = hour < 12 ? "Good morning" : (hour < 18 ? "Good afternoon" : "Good evening")
+        let name = auth.firstName.map { ", \($0)" } ?? ""
+        var s = "Hello\(name)! \(part), and welcome to Nova. The universe is for everyone."
+        if let place = location.spokenPlaceName, !persistence.settings.demoMode { s += " It looks like you're in \(place)." }
+        s += " Tap Ask to talk to me about space, or Find to be guided to a star."
+        return s
+    }
+
     var body: some View {
         Screen(title: "Nova", showsTitle: false) {
-            NovaHeader()
-                .padding(.top, 4)
-                .padding(.bottom, 6)
+            HStack(alignment: .center) {
+                NovaHeader()
+                Spacer(minLength: 8)
+                Text("base2")
+                    .font(AppFont.style(.caption, .semibold))
+                    .foregroundStyle(Theme.accent)
+                    .padding(.horizontal, 10).padding(.vertical, 4)
+                    .background(Theme.accent.opacity(0.15), in: Capsule())
+            }
+            .padding(.top, 4)
+            .padding(.bottom, 6)
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(greeting)
@@ -40,6 +80,12 @@ struct HomeView: View {
                 Text("The universe is for everyone.")
                     .font(AppFont.style(.title3))
                     .foregroundStyle(Theme.textSecondary)
+                if let place = placeLine {
+                    Label(place, systemImage: "location.fill")
+                        .font(AppFont.style(.subheadline, .medium))
+                        .foregroundStyle(Theme.accent)
+                        .padding(.top, 2)
+                }
             }
             .padding(.bottom, 4)
 
@@ -73,7 +119,6 @@ struct HomeView: View {
                 }
             }
 
-            // Tonight, as a glass card.
             HStack(spacing: 14) {
                 Image(systemName: "moon.stars.fill")
                     .font(.system(size: 26))
@@ -113,10 +158,7 @@ struct HomeView: View {
             .accessibilityLabel("Explore")
             .accessibilityHint("Hear what is above the horizon tonight.")
 
-            Button {
-                haptics.play(.select)
-                router.tab = .identify
-            } label: {
+            NavigationLink { IdentifyView() } label: {
                 FeatureRow(icon: "questionmark.circle.fill", title: "What am I pointing at?", subtitle: "Point at the sky and hear what should be there")
             }
             .buttonStyle(CardButtonStyle())
@@ -134,16 +176,12 @@ struct HomeView: View {
             }
             SpeechControls()
         }
-        .onAppear {
-            if !persistence.settings.hasHeardIntro {
-                persistence.settings.hasHeardIntro = true
-                speech.narrate("\(greeting) " + Self.introText)
-            }
-        }
+        .onAppear { greetIfNeeded() }
+        .onChange(of: auth.firstName) { _, _ in greetIfNeeded() }
+        .onChange(of: location.placeName) { _, _ in greetIfNeeded() }
     }
 }
 
-/// Shows and narrates everything we know about one object. Reading it counts toward "learned" progress.
 struct ObjectDetailView: View {
     let object: CelestialObject
     @EnvironmentObject var speech: SpeechManager
@@ -164,7 +202,7 @@ struct ObjectDetailView: View {
             }.accessibilityElement(children: .combine)
 
             AppButton(title: "Hear a short description", systemImage: "speaker.wave.2") {
-                speech.narrate(speech.shortDescription(of: object))   // only the deeper description counts as "learned"
+                speech.narrate(speech.shortDescription(of: object))   
             }
             AppButton(title: "Learn more", systemImage: "text.book.closed", prominent: false) {
                 speech.narrate(speech.deeperDescription(of: object))

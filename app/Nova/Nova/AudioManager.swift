@@ -23,19 +23,18 @@ enum SoundEffect {
     }
 }
 
-// MARK: - Render state (touched from the audio thread; values are simple scalars, races are benign)
 
 private final class PadState: @unchecked Sendable {
     var phases = [Double](repeating: 0, count: 10)
     var lfo = [Double](repeating: 0, count: 5)
     var gain: Float = 0
     var targetGain: Float = 0
-    let freqs: [Double] = [110.0, 164.81, 220.0, 261.63, 329.63]   // open A-minor pad, original and synthesized
+    let freqs: [Double] = [110.0, 164.81, 220.0, 261.63, 329.63]
 
     func render(frames: Int, list: UnsafeMutableAudioBufferListPointer, sr: Double) {
         let twoPi = 2 * Double.pi
         for n in 0..<frames {
-            gain += (targetGain - gain) * 0.00002           // ~1–2 second fades
+            gain += (targetGain - gain) * 0.00002
             var l = 0.0, r = 0.0
             for k in 0..<5 {
                 lfo[k] += twoPi * (0.03 + 0.017 * Double(k)) / sr
@@ -81,12 +80,6 @@ private final class ToneState: @unchecked Sendable {
     }
 }
 
-// MARK: - Manager
-
-/// Original, synthesized audio only: no third-party music or samples, so there are no licensing issues.
-/// Graph: pad -> ambienceMixer -> main;  effects player -> effectsMixer -> main;
-///        guidance tone -> environment node (3D / HRTF) -> guidanceMixer -> main.
-/// Speech is produced separately by AVSpeechSynthesizer (see SpeechManager) and ducks ambience + guidance.
 @MainActor
 final class AudioManager: ObservableObject {
     @Published private(set) var isPaused = false
@@ -105,12 +98,11 @@ final class AudioManager: ObservableObject {
     private let tone = ToneState()
     private let effectFormat = AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 1)!
     private var buffers: [String: AVAudioPCMBuffer] = [:]
-    private var activeSFX: [AVAudioPlayer] = []     // bundled ElevenLabs-generated effects currently playing
+    private var activeSFX: [AVAudioPlayer] = []
     private var built = false
     private var ducked = false
     private var observers: [NSObjectProtocol] = []
 
-    // MARK: Lifecycle
 
     func start() {
         let session = AVAudioSession.sharedInstance()
@@ -173,8 +165,6 @@ final class AudioManager: ObservableObject {
         buildEffects()
     }
 
-    // MARK: Settings and controls
-
     func apply(_ s: AppSettings) {
         pad.targetGain = s.ambienceEnabled ? 1 : 0
         updateVolumes(s)
@@ -188,7 +178,6 @@ final class AudioManager: ObservableObject {
         guidanceMixer.outputVolume = s.guidanceTone ? Float(max(0.3, s.effectsVolume)) * duck : 0
     }
 
-    /// Called by SpeechManager so music and guidance tone get out of the way of narration.
     func setNarrationActive(_ active: Bool) {
         ducked = active
         updateVolumes(settingsProvider())
@@ -203,11 +192,6 @@ final class AudioManager: ObservableObject {
         activeSFX.forEach { $0.stop() }; activeSFX.removeAll()
     }
 
-    // MARK: Guidance tone
-
-    /// dAz: degrees to turn right (+) or left (-), dAlt: degrees to tilt up (+) or down (-).
-    /// Spatial position puts the tone where the target is relative to the pointing direction;
-    /// pitch rises when the target is higher (a second, headphone-independent cue).
     func updateGuidance(dAzimuth: Double, dAltitude: Double, separation: Double, aligned: Bool) {
         guard settingsProvider().guidanceTone, engine.isRunning else { tone.targetGain = 0; return }
         let az = AstronomyEngine.rad(max(-180, min(180, dAzimuth)))
@@ -225,11 +209,8 @@ final class AudioManager: ObservableObject {
 
     func stopGuidance() { tone.targetGain = 0 }
 
-    // MARK: Effects
-
     func play(_ effect: SoundEffect) {
         guard settingsProvider().effectsEnabled, !isPaused else { return }
-        // Prefer a bundled, ElevenLabs-generated file (Resources/Sounds/sfx_<name>.mp3); otherwise the synthesized fallback.
         if let url = Bundle.main.url(forResource: "sfx_\(key(effect))", withExtension: "mp3"),
            let p = try? AVAudioPlayer(contentsOf: url) {
             activeSFX.removeAll { !$0.isPlaying }
