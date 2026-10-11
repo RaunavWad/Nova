@@ -5,8 +5,8 @@
 //  Created by Vihaan Deshmukh on 10/10/26.
 //
 
+import CoreLocation
 import SwiftUI
-import Combine
 
 extension CelestialObject {
     var title: String { name.prefix(1).uppercased() + name.dropFirst() }
@@ -52,7 +52,6 @@ struct FindObjectView: View {
         }
     }
 
-    // MARK: Choosing
 
     private var chooser: some View {
         Group {
@@ -80,13 +79,15 @@ struct FindObjectView: View {
     private func refresh() {
         guard let c = location.coordinate(demo: persistence.settings.demoMode) else { rows = []; return }
         let now = Date()
-        rows = Catalog.locatable.map { o in
-            guard let p = AstronomyEngine.position(of: o, date: now, latitude: c.latitude, longitude: c.longitude) else { return (o, "") }
-            return (o, p.altitude < 0 ? "Below the horizon right now." : "Currently \(AstronomyEngine.describeLocation(p)).")
+        let computed = Catalog.locatable.map { o -> (CelestialObject, String, Double) in
+            guard let p = AstronomyEngine.position(of: o, date: now, latitude: c.latitude, longitude: c.longitude) else { return (o, "", -90) }
+            return (o, p.altitude < 0 ? "Below the horizon right now." : "Currently \(AstronomyEngine.describeLocation(p)).", p.altitude)
         }
+        rows = computed.sorted {
+            ($0.2 < 0 ? 1 : 0, $0.0.magnitude ?? 9) < ($1.2 < 0 ? 1 : 0, $1.0.magnitude ?? 9)
+        }.map { ($0.0, $0.1) }
     }
 
-    // MARK: Guiding
 
     private func guidanceSection(_ sel: CelestialObject) -> some View {
         let pos: Horizontal? = location.coordinate(demo: persistence.settings.demoMode).flatMap {
@@ -97,7 +98,6 @@ struct FindObjectView: View {
                 Text("Finding \(sel.name)").sectionHeader()
                 Text("Hold the phone with its back toward the sky and move it slowly. Pulses guide you; a double thump and a steady tone mean you are on target.")
                 if let pos { Text("It is currently \(pos.altitude < 0 ? "below the horizon" : AstronomyEngine.describeLocation(pos)).").font(AppFont.style(.subheadline)) }
-                // Live status changes ten times a second, so it is hidden from VoiceOver; use the button below instead.
                 Text("Live status: \(guidance.summary)").font(AppFont.style(.footnote)).foregroundStyle(Theme.textSecondary).accessibilityHidden(true)
             }
 
@@ -144,7 +144,6 @@ struct FindObjectView: View {
     }
 }
 
-// MARK: - Calibration
 
 struct CalibrationView: View {
     @EnvironmentObject var persistence: PersistenceManager
