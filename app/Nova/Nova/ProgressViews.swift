@@ -7,7 +7,6 @@
 
 import SwiftUI
 
-// MARK: - My Discoveries
 
 struct DiscoveriesView: View {
     @EnvironmentObject var persistence: PersistenceManager
@@ -53,8 +52,6 @@ struct DiscoveriesView: View {
     }
 }
 
-// MARK: - Missions
-
 struct MissionsView: View {
     @EnvironmentObject var persistence: PersistenceManager
     @EnvironmentObject var speech: SpeechManager
@@ -91,8 +88,6 @@ struct MissionsView: View {
         }
     }
 }
-
-// MARK: - Achievements
 
 struct AchievementsView: View {
     @EnvironmentObject var persistence: PersistenceManager
