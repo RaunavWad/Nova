@@ -8,9 +8,7 @@
 import SwiftUI
 import UIKit
 
-/// Launch animation: a ring draws in around a star, a small moon orbits, the name fades up. About 2.6 seconds
-/// (longer when VoiceOver is on so the name can be read). Tap anywhere to skip. With Reduce Motion on, it is a
-/// calm fade with no movement. The sound is the same "star" chime used in the app.
+
 struct SplashView: View {
     var onFinish: () -> Void
 
